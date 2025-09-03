@@ -1,18 +1,54 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState,useCallback } from "react";
+import { useParams,useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaChevronLeft, FaChevronRight, FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [adding, setAdding] = useState(false);
-  const imgRef = useRef();
-
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAllSpecs, setShowAllSpecs] = useState(false);
+  const [fade, setFade] = useState(false); // 👈 trạng thái để tạo hiệu ứng fade
+  const navigate = useNavigate();
   useEffect(() => {
-    axios.get(`http://localhost:5000/products/${id}`)
-      .then(res => setProduct(res.data))
-      .catch(err => console.error("Lỗi khi lấy chi tiết sản phẩm:", err));
+    axios
+      .get(`http://localhost:5000/products/${id}`)
+      .then((res) => {
+        setProduct(res.data);
+        setCurrentIndex(0);
+      })
+      .catch((err) => console.error("Lỗi khi lấy chi tiết sản phẩm:", err));
   }, [id]);
+  const handleNext = useCallback(() => {
+    setFade(true);
+    setTimeout(() => {
+      setCurrentIndex((prev) =>
+        prev === product.images.length - 1 ? 0 : prev + 1
+      );
+      setFade(false);
+    }, 500);
+  },[product]);
+
+  // 👇 Auto chuyển ảnh sau 10 giây
+  useEffect(() => {
+    if (product && product.images && product.images.length > 1) {
+      const interval = setInterval(() => {
+        handleNext();
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [product, currentIndex,handleNext]);
+
+  const handlePrev = () => {
+    setFade(true);
+    setTimeout(() => {
+      setCurrentIndex((prev) =>
+        prev === 0 ? product.images.length - 1 : prev - 1
+      );
+      setFade(false);
+    }, 500); // thời gian hiệu ứng fade
+  };
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
@@ -21,56 +57,15 @@ function ProductDetail() {
       return;
     }
 
-    // Lấy vị trí ảnh sản phẩm và icon giỏ hàng
-    const cartIcon = document.getElementById("cart-icon");
-    if (!imgRef.current || !cartIcon) {
-      alert("Lỗi: không tìm thấy ảnh sản phẩm hoặc icon giỏ hàng.");
-      return;
-    }
-
-    const imgRect = imgRef.current.getBoundingClientRect();
-    const cartRect = cartIcon.getBoundingClientRect();
-
-    // Clone ảnh sản phẩm
-    const cloneImg = imgRef.current.cloneNode(true);
-    cloneImg.style.position = "fixed";
-    cloneImg.style.left = `${imgRect.left}px`;
-    cloneImg.style.top = `${imgRect.top}px`;
-    cloneImg.style.width = `${imgRect.width}px`;
-    cloneImg.style.height = `${imgRect.height}px`;
-    cloneImg.style.transition = "all 1s ease-in-out";
-    cloneImg.style.zIndex = 1000;
-    cloneImg.style.borderRadius = "8px";
-    cloneImg.style.pointerEvents = "none"; // tránh ảnh hưởng đến tương tác
-    document.body.appendChild(cloneImg);
-
-    // Force reflow để chắc chắn áp dụng vị trí ban đầu
-    cloneImg.getBoundingClientRect();
-
-    // Bắt đầu animation bay vào giỏ hàng
-    cloneImg.style.left = `${cartRect.left + cartRect.width / 2}px`;
-    cloneImg.style.top = `${cartRect.top + cartRect.height / 2}px`;
-    cloneImg.style.width = "0px";
-    cloneImg.style.height = "0px";
-    cloneImg.style.opacity = "0.5";
-
-    cloneImg.addEventListener("transitionend", () => {
-      cloneImg.remove();
-    });
-
     setAdding(true);
     try {
-      await axios.post("http://localhost:5000/cart/add", {
-        product_id: product.id,
-        quantity: 1,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      await axios.post(
+        "http://localhost:5000/cart/add",
+        { product_id: product.id, quantity: 1 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       alert("🛒 Đã thêm vào giỏ hàng!");
-      // TODO: Cập nhật giỏ hàng trong state hoặc context nếu có
+      navigate("/");
 
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
@@ -86,43 +81,130 @@ function ProductDetail() {
 
   if (!product) return <p>Đang tải...</p>;
 
+  // Chuẩn bị dữ liệu specs thành array để dễ cắt 10 dòng
+  const specs = [
+    { label: "Hãng", value: product.brand },
+    { label: "CPU", value: product.cpu || "Chưa rõ" },
+    { label: "RAM", value: product.ram },
+    { label: "Bộ nhớ", value: product.storage },
+    { label: "Màn hình", value: product.screen },
+    { label: "Pin", value: product.battery },
+    { label: "Hệ điều hành", value: product.os },
+    { label: "Camera trước", value: product.camera_front },
+    { label: "Camera sau", value: product.camera_rear },
+    { label: "Màu sắc", value: product.color },
+    { label: "Kích thước", value: product.dimensions },
+    { label: "Trọng lượng", value: product.weight },
+    { label: "Cổng kết nối", value: product.ports },
+    { label: "Bảo hành", value: product.warranty },
+    { label: "Ngày phát hành", value: product.release_date },
+  ];
+
+  const visibleSpecs = showAllSpecs ? specs : specs.slice(0, 10);
+
   return (
     <div className="container py-4">
       <div className="row">
-        <div className="col-md-5">
-          <img
-            ref={imgRef}
-            src={product.image || "https://via.placeholder.com/300"}
-            alt={product.name}
-            className="img-fluid"
-            style={{ borderRadius: "8px" }}
-          />
+        {/* Ảnh sản phẩm */}
+        <div className="col-md-5 text-center">
+          <div className="position-relative" style={{ maxWidth: "400px", margin: "0 auto" }}>
+            <img
+              src={product.images[currentIndex]}
+              alt={product.name}
+              className={`img-fluid fade-image ${fade ? "fade-out" : "fade-in"}`}
+              style={{ borderRadius: "8px", maxHeight: "400px", objectFit: "contain" }}
+            />
+            <button
+              onClick={handlePrev}
+              className="btn shadow-sm"
+              style={{
+                position: "absolute",
+                left: "-50px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                border: "1px solid #ddd",
+              }}
+            >
+              <FaChevronLeft />
+            </button>
+            <button
+              onClick={handleNext}
+              className="btn shadow-sm"
+              style={{
+                position: "absolute",
+                right: "-50px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                border: "1px solid #ddd",
+              }}
+            >
+              <FaChevronRight />
+            </button>
+          </div>
+
+          {/* Thumbnail */}
+          <div className="d-flex gap-2 justify-content-center flex-wrap mt-3">
+            {product.images &&
+              product.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`thumb-${idx}`}
+                  className="img-thumbnail"
+                  style={{
+                    width: "70px",
+                    height: "70px",
+                    objectFit: "cover",
+                    cursor: "pointer",
+                    border: currentIndex === idx ? "2px solid #f60" : "1px solid #ddd",
+                  }}
+                  onClick={() => setCurrentIndex(idx)}
+                />
+              ))}
+          </div>
         </div>
+
+        {/* Thông tin sản phẩm */}
         <div className="col-md-7">
           <h2>{product.name}</h2>
-          <h4 className="text-danger">
-            {Number(product.price).toLocaleString("vi-VN")}₫
-          </h4>
+          <h4 className="text-danger">{Number(product.price).toLocaleString("vi-VN")}₫</h4>
 
           <table className="table mt-3">
             <tbody>
-              <tr><th>Hãng</th><td>{product.brand}</td></tr>
-              <tr><th>CPU</th><td>{product.cpu || "Chưa rõ"}</td></tr>
-              <tr><th>RAM</th><td>{product.ram}</td></tr>
-              <tr><th>Bộ nhớ</th><td>{product.storage}</td></tr>
-              <tr><th>Màn hình</th><td>{product.screen}</td></tr>
-              <tr><th>Pin</th><td>{product.battery}</td></tr>
-              <tr><th>Hệ điều hành</th><td>{product.os}</td></tr>
-              <tr><th>Camera trước</th><td>{product.camera_front}</td></tr>
-              <tr><th>Camera sau</th><td>{product.camera_rear}</td></tr>
-              <tr><th>Màu sắc</th><td>{product.color}</td></tr>
-              <tr><th>Kích thước</th><td>{product.dimensions}</td></tr>
-              <tr><th>Trọng lượng</th><td>{product.weight}</td></tr>
-              <tr><th>Cổng kết nối</th><td>{product.ports}</td></tr>
-              <tr><th>Bảo hành</th><td>{product.warranty}</td></tr>
-              <tr><th>Ngày phát hành</th><td>{product.release_date}</td></tr>
+              {visibleSpecs.map((spec, idx) => (
+                <tr key={idx}>
+                  <th>{spec.label}</th>
+                  <td>{spec.value}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
+
+          {/* Nút xem thêm / thu gọn */}
+          {specs.length > 10 && (
+            <button
+              className="btn btn-light d-flex align-items-center gap-2"
+              onClick={() => setShowAllSpecs(!showAllSpecs)}
+            >
+              {showAllSpecs ? (
+                <>
+                  Thu gọn <FaChevronUp />
+                </>
+              ) : (
+                <>
+                  Xem thêm <FaChevronDown />
+                </>
+              )}
+            </button>
+          )}
 
           <button
             onClick={handleAddToCart}

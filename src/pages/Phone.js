@@ -90,6 +90,14 @@ function Phone() {
         >
           <i className="bi bi-funnel-fill me-1"></i>Lọc
         </button>
+         <button
+            className={`btn btn-sm ${
+              selectedBrand === "Tất cả" ? "btn-primary" : "btn-outline-primary"
+            }`}
+            onClick={() => setSelectedBrand("Tất cả")}
+          >
+            Tất cả
+         </button>
         {brands.map((brand) => (
           <button
             key={brand}

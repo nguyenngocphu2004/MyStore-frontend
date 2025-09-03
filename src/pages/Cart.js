@@ -93,7 +93,21 @@ function Cart() {
               {cart.map(item => (
                 <tr key={item.id}>
                   <td>
-                    <img src={item.image} alt={item.name} width="60" />
+                    <img
+         src={
+            item.images && item.images.length > 0
+             ? `${item.images[0]}?v=${new Date().getTime()}`
+              : "https://via.placeholder.com/300"
+             }
+          alt={item.name || "Sản phẩm"}
+          className="card-img-top"
+          style={{
+            width: "100%",
+            height: "50px",
+            objectFit: "contain",
+            backgroundColor: "#fff",
+          }}
+      />
                   </td>
                   <td>{item.name}</td>
                   <td>{Number(item.unit_price).toLocaleString("vi-VN")}₫</td>

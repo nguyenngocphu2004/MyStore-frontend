@@ -131,7 +131,6 @@ function Header() {
           )}
           {/* Nút giỏ hàng có id để dùng hiệu ứng */}
           <button
-            id="cart-icon"
             className="btn btn-dark d-flex align-items-center gap-2"
             onClick={() => navigate("/cart")}
             title="Giỏ hàng"
