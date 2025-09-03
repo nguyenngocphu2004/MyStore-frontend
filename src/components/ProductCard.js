@@ -1,7 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 
 function ProductCard({ product }) {
+  const navigate = useNavigate();
+
+  const handleBuyNow = () => {
+  navigate(`/checkout/${product.id}`);
+  };
   if (!product) return null;
 
   return (
@@ -22,7 +27,7 @@ function ProductCard({ product }) {
 
 
         <div className="mt-auto d-flex justify-content-center gap-2">
-          <button className="btn btn-warning">Mua ngay</button>
+          <button onClick={handleBuyNow} className="btn btn-warning">Mua ngay</button>
           <Link to={`/product/${product.id}`} className="btn btn-outline-secondary">
             Xem chi tiết
           </Link>

@@ -8,6 +8,9 @@ import Register from "./pages/Register";
 import Search from "./pages/Search";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
+import Checkout from "./pages/Checkout";
+import Cart from './pages/Cart';
+
 function AppRoutes() {
   return (
     <Routes>
@@ -20,6 +23,8 @@ function AppRoutes() {
       <Route path="/search" element={<Search />} />
       <Route path="/product/:id" element={<ProductDetail />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/checkout/:productId" element={<Checkout />} />
+      <Route path="/cart" element={<Cart />} />
     </Routes>
   );
 }
