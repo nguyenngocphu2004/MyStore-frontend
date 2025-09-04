@@ -11,7 +11,12 @@ import Profile from "./pages/Profile";
 import Checkout from "./pages/Checkout";
 import Cart from './pages/Cart';
 import GuestOrders from "./pages/GuestOrders";
-
+import AdminLogin from "./pagesAdmin/AdminLogin";
+import AdminLayout from "./pagesAdmin/AdminLayout";
+import PrivateRoute from "./components/PrivateRoute";
+import AdminUsers from "./pagesAdmin/AdminUsers";
+import AdminProducts from "./pagesAdmin/AdminProducts";
+import AdminOrders from "./pagesAdmin/AdminOrders";
 function AppRoutes() {
   return (
     <Routes>
@@ -27,6 +32,18 @@ function AppRoutes() {
       <Route path="/checkout/:productId" element={<Checkout />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/guest-orders" element={<GuestOrders />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/dashboard" element={
+        <PrivateRoute>
+          <AdminLayout />
+        </PrivateRoute>
+      }>
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="orders" element={<AdminOrders />} />
+      </Route>
+
+
     </Routes>
   );
 }
