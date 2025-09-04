@@ -47,3 +47,61 @@
 .fade-out {
   opacity: 0;
 }
+/* Container của form bình luận */
+.comment-form {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Hàng chọn sao */
+.comment-form .rating-stars {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Ô nhập bình luận */
+.comment-form textarea {
+  resize: none;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  transition: all 0.3s ease;
+}
+
+.comment-form textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.25);
+}
+
+/* Input họ tên, số điện thoại */
+.comment-form input {
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  transition: 0.3s;
+}
+
+.comment-form input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.25);
+}
+
+/* Nút gửi */
+.comment-form button {
+  background: #007bff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.comment-form button:hover {
+  background: #0056b3;
+}

@@ -11,29 +11,16 @@ function Profile() {
   const [successMsg, setSuccessMsg] = useState(null);
   const navigate = useNavigate();
 
-  // Lấy thông tin hồ sơ
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+  const token = localStorage.getItem("token"); // lấy token đúng key
+  if (!token) navigate("/login");
 
+  // Hàm fetch profile
+  const fetchProfile = () => {
     fetch("http://localhost:5000/profile", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Lỗi khi lấy thông tin");
-        }
-        return res.json();
-      })
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         setProfile(data);
         setForm({
           username: data.username,
@@ -41,47 +28,25 @@ function Profile() {
           phone: data.phone || "",
         });
       })
-      .catch((err) => {
-        setError(err.message);
-        if (
-          err.message === "Token has expired" ||
-          err.message === "User không tồn tại"
-        ) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("username");
-          navigate("/login");
-        }
-      });
-  }, [navigate]);
+      .catch(err => console.error(err));
+  };
 
-  // Lấy danh sách đơn hàng
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
+  // Hàm fetch orders
+  const fetchOrders = () => {
     fetch("http://localhost:5000/orders", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Lỗi khi lấy đơn hàng");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setOrders(data);
-      })
-      .catch((err) => {
-        console.error(err.message);
-      });
+      .then(res => res.json())
+      .then(data => setOrders(data.orders || []))
+      .catch(err => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    fetchOrders();
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -93,11 +58,13 @@ function Profile() {
 
   const handleCancel = () => {
     setEditing(false);
-    setForm({
-      username: profile.username,
-      email: profile.email,
-      phone: profile.phone || "",
-    });
+    if (profile) {
+      setForm({
+        username: profile.username,
+        email: profile.email,
+        phone: profile.phone || "",
+      });
+    }
     setError(null);
     setSuccessMsg(null);
   };
@@ -107,8 +74,6 @@ function Profile() {
     setError(null);
     setSuccessMsg(null);
 
-    const token = localStorage.getItem("token");
-
     fetch("http://localhost:5000/profile", {
       method: "PUT",
       headers: {
@@ -117,7 +82,7 @@ function Profile() {
       },
       body: JSON.stringify(form),
     })
-      .then(async (res) => {
+      .then(async res => {
         if (!res.ok) {
           const data = await res.json();
           throw new Error(data.error || "Cập nhật thất bại");
@@ -125,11 +90,11 @@ function Profile() {
         return res.json();
       })
       .then(() => {
-        setProfile((prev) => ({ ...prev, ...form }));
+        setProfile({ ...profile, ...form });
         setEditing(false);
         setSuccessMsg("Cập nhật thành công!");
       })
-      .catch((err) => setError(err.message))
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   };
 
@@ -249,10 +214,18 @@ function Profile() {
                 <ul className="list-group list-group-flush">
                   {orders.map((order) => (
                     <li key={order.id} className="list-group-item">
-                      <div className="fw-semibold">Mã đơn: #{order.id}</div>
+                      <div>Mã đơn: #{order.id}</div>
                       <div>Ngày đặt: {new Date(order.created_at).toLocaleString()}</div>
                       <div>Tổng tiền: {order.total_price?.toLocaleString()} VND</div>
-                      {/* Bạn có thể thêm chi tiết sản phẩm nếu muốn */}
+                      {order.items?.length > 0 && (
+                        <ul>
+                          {order.items.map((item, idx) => (
+                            <li key={idx}>
+                              {item.product_name} x {item.quantity} - {item.price?.toLocaleString()} VND
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState,useCallback } from "react";
 import { useParams,useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaChevronLeft, FaChevronRight, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaChevronDown, FaChevronUp,FaStar,FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 
 function ProductDetail() {
   const { id } = useParams();
@@ -11,6 +11,51 @@ function ProductDetail() {
   const [showAllSpecs, setShowAllSpecs] = useState(false);
   const [fade, setFade] = useState(false); // 👈 trạng thái để tạo hiệu ứng fade
   const navigate = useNavigate();
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [guestInfo, setGuestInfo] = useState({ name: "", phone: "" });
+  const token = localStorage.getItem("token");
+  const [rating, setRating] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
+
+  useEffect(() => {
+  axios.get(`http://localhost:5000/products/${id}/comments`)
+    .then(res => {
+      setComments(res.data.comments);
+      setAverageRating(res.data.average_rating);
+    })
+    .catch(() => setComments([]));
+}, [id]);
+
+// Gửi bình luận
+const handleSubmitComment = async (e) => {
+  e.preventDefault();
+  if (!newComment.trim()|| rating === 0){
+   alert("Vui lòng nhập bình luận và chọn số sao");
+   return;
+   }
+
+  try {
+    const payload = token
+      ? { content: newComment, rating }
+      : { content: newComment,rating, guest_name: guestInfo.name, guest_phone: guestInfo.phone };
+
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.post(
+      `http://localhost:5000/products/${id}/comments`,
+      payload,
+      { headers }
+    );
+
+    setComments((prev) => [...prev, res.data.comment]);
+    setNewComment("");
+    setGuestInfo({ name: "", phone: "" });
+    setRating(0);
+  } catch (err) {
+    alert(err.response?.data?.error || "Lỗi khi gửi bình luận");
+  }
+};
+
   useEffect(() => {
     axios
       .get(`http://localhost:5000/products/${id}`)
@@ -49,6 +94,28 @@ function ProductDetail() {
       setFade(false);
     }, 500); // thời gian hiệu ứng fade
   };
+  // Vote comment
+const handleVote = async (commentId, action) => {
+  try {
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.post(
+      `http://localhost:5000/comments/${commentId}/vote`,
+      { action },
+      { headers, withCredentials: true } // 👈 để cookie session_id lưu với guest
+    );
+
+    // Cập nhật lại comments sau khi vote
+    setComments((prev) =>
+      prev.map((cmt) =>
+        cmt.id === commentId
+          ? { ...cmt, likes: res.data.likes }
+          : cmt
+      )
+    );
+  } catch (err) {
+    alert(err.response?.data?.error || "Lỗi khi vote");
+  }
+};
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
@@ -170,6 +237,111 @@ function ProductDetail() {
                 />
               ))}
           </div>
+          {/* Bình luận */}
+<div className="mt-4">
+   <h3>Đánh giá trung bình</h3>
+      <div className="d-flex align-items-center mb-2">
+      {[1, 2, 3, 4, 5].map((star) => {
+        if (averageRating >= star) {
+          return <FaStar key={star} size={20} color="#ffc107" />;
+        } else if (averageRating >= star - 0.5) {
+          return <FaStarHalfAlt key={star} size={20} color="#ffc107" />;
+        } else {
+          return <FaRegStar key={star} size={20} color="#e4e5e9" />;
+        }
+      })}
+      <span className="ms-2">({averageRating.toFixed(1)})</span>
+    </div>
+  <h5>Bình luận</h5>
+
+  <ul className="list-group">
+  {comments.map((cmt) => (
+    <li
+      key={cmt.id}
+      className="list-group-item d-flex align-items-center justify-content-between"
+      style={{ gap: "10px" }}
+    >
+      {/* Bên trái: tên + sao + nội dung */}
+      <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+        <strong>{cmt.username || cmt.guest_name || "Ẩn danh"}</strong>
+        <span>:</span>
+        <div className="d-flex align-items-center">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <FaStar
+              key={star}
+              size={16}
+              color={cmt.rating >= star ? "#ffc107" : "#e4e5e9"}
+            />
+          ))}
+        </div>
+        <span>{cmt.content}</span>
+      </div>
+
+      {/* Bên phải: nút vote + thời gian */}
+      <div className="d-flex align-items-center" style={{ gap: "10px" }}>
+        <button
+          className="btn btn-sm btn-outline-success"
+          onClick={() => handleVote(cmt.id, "like")}
+        >
+          👍 Hữu ích ({cmt.likes || 0})
+        </button>
+        <small className="text-muted">{cmt.created_at}</small>
+      </div>
+    </li>
+  ))}
+</ul>
+
+</div>
+<form onSubmit={handleSubmitComment} className="comment-form">
+    {!token && (
+      <>
+        <input
+          type="text"
+          placeholder="Họ tên"
+          className="form-control mb-2"
+          value={guestInfo.name}
+          onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
+          required
+        />
+        <input
+          type="tel"
+          placeholder="Số điện thoại"
+          className="form-control mb-2"
+          value={guestInfo.phone}
+          onChange={(e) => setGuestInfo({ ...guestInfo, phone: e.target.value })}
+          required
+        />
+      </>
+    )}
+
+    {/* Chọn số sao */}
+              <div className="mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <FaStar
+                    key={star}
+                    size={24}
+                    onClick={() => setRating(star)}
+                    style={{
+                      cursor: "pointer",
+                      color: rating >= star ? "#ffc107" : "#e4e5e9",
+                      marginRight: "4px",
+                    }}
+                  />
+                ))}
+              </div>
+    <textarea
+      className="form-control mb-2"
+      placeholder="Nhập bình luận..."
+      rows="3"
+      value={newComment}
+      onChange={(e) => setNewComment(e.target.value)}
+      required
+    />
+    <button type="submit" className="btn btn-primary">
+      Gửi bình luận
+    </button>
+  </form>
+
         </div>
 
         {/* Thông tin sản phẩm */}

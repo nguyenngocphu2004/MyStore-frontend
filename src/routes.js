@@ -10,6 +10,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
 import Checkout from "./pages/Checkout";
 import Cart from './pages/Cart';
+import GuestOrders from "./pages/GuestOrders";
 
 function AppRoutes() {
   return (
@@ -25,6 +26,7 @@ function AppRoutes() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/checkout/:productId" element={<Checkout />} />
       <Route path="/cart" element={<Cart />} />
+      <Route path="/guest-orders" element={<GuestOrders />} />
     </Routes>
   );
 }
