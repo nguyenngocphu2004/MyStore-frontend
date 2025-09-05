@@ -34,7 +34,7 @@ function GuestOrders() {
 
   return (
     <div className="container my-5">
-      <h2>Tra cứu đơn hàng cho khách vãng lai</h2>
+      <h2>Tra cứu đơn hàng cho khách </h2>
       <form onSubmit={handleSearch} className="mb-4">
         <div className="input-group">
           <input

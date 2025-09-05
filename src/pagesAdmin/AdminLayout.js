@@ -6,7 +6,7 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/admin/login");
+    navigate("/admin");
   };
 
   return (
@@ -17,10 +17,11 @@ export default function AdminLayout() {
         <ul className="list-unstyled">
           <li><NavLink className="text-white" to="users">Users</NavLink></li>
           <li><NavLink className="text-white" to="products">Products</NavLink></li>
-          <li><NavLink className="text-white" to="orders">Orders</NavLink></li>
+          <li><NavLink className="text-white" to="revenue">Revenue</NavLink></li>
           <li><NavLink className="text-white" to="profit">Profit</NavLink></li>
           <li><NavLink className="text-white" to="categories">Categories</NavLink></li>
           <li><NavLink className="text-white" to="brands">Brands</NavLink></li>
+          <li><NavLink className="text-white" to="orders">Orders</NavLink></li>
         </ul>
         <button className="btn btn-danger mt-3" onClick={handleLogout}>Logout</button>
       </nav>

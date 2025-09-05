@@ -4,35 +4,45 @@ import Toast from "../components/Toast";
 
 function Login() {
   const [form, setForm] = useState({ username: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const navigate = useNavigate();
-  const [showToast, setShowToast] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    fetch("http://localhost:5000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.access_token) {
-          localStorage.setItem("token", data.access_token);
-          localStorage.setItem("username", form.username);
-          setShowToast(true); // hiện toast thay vì alert
-          window.dispatchEvent(new Event("loginSuccess"));
-          setTimeout(() => {
-            navigate("/");
-          }, 1000);
-        } else {
-          alert(data.error);
-        }
-      })
-      .catch((err) => console.error(err));
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.access_token) {
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("username", form.username);
+        localStorage.setItem("role", data.role);  // ← lưu role
+
+        setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
+        window.dispatchEvent(new Event("loginSuccess"));
+
+        // Redirect sau 1s
+        setTimeout(() => navigate("/"), 1000);
+      } else {
+        setToast({ show: true, message: data.error || "Đăng nhập thất bại", type: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ show: true, message: "Không thể kết nối tới server", type: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,7 +64,9 @@ function Login() {
           className="form-control my-2"
           required
         />
-        <button className="btn btn-success">Đăng nhập</button>
+        <button className="btn btn-success" type="submit" disabled={loading}>
+          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+        </button>
       </form>
 
       <p className="mt-3">
@@ -65,9 +77,10 @@ function Login() {
       </p>
 
       <Toast
-        message="Đăng nhập thành công"
-        show={showToast}
-        onClose={() => setShowToast(false)}
+        message={toast.message}
+        show={toast.show}
+        type={toast.type} // bạn có thể dùng type để đổi màu toast
+        onClose={() => setToast({ ...toast, show: false })}
       />
     </div>
   );
