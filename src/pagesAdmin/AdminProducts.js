@@ -4,6 +4,7 @@ export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
+    id: null,
     name: "", price: "", brand: "", category_id: "",
     cpu: "", ram: "", storage: "", screen: "",
     battery: "", os: "", camera_front: "", camera_rear: "",
@@ -11,6 +12,7 @@ export default function AdminProducts() {
     graphics_card: "", ports: "", warranty: ""
   });
   const [images, setImages] = useState([]);
+  const [activeTab, setActiveTab] = useState("list"); // list | add | edit
   const token = localStorage.getItem("adminToken");
 
   // Lấy danh sách sản phẩm
@@ -39,12 +41,14 @@ export default function AdminProducts() {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleFileChange = (e) => setImages(e.target.files);
 
+  // Thêm / sửa sản phẩm
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const url = form.id ? `http://localhost:5000/admin/products/${form.id}` : "http://localhost:5000/admin/products";
+    const method = form.id ? "PUT" : "POST";
 
-    // 1️⃣ Tạo sản phẩm
-    const res = await fetch("http://localhost:5000/admin/products", {
-      method: "POST",
+    const res = await fetch(url, {
+      method,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
@@ -59,106 +63,168 @@ export default function AdminProducts() {
 
     const product = await res.json();
 
-    // 2️⃣ Upload ảnh lên Cloudinary
+    // Upload ảnh nếu có
     if (images.length > 0) {
       const formData = new FormData();
       for (let i = 0; i < images.length; i++) formData.append("images", images[i]);
-
       const imgRes = await fetch(`http://localhost:5000/admin/products/${product.id}/images`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
-
       if (!imgRes.ok) {
         const imgErr = await imgRes.json();
         alert(imgErr.error);
       }
     }
 
-    alert("Thêm sản phẩm thành công!");
+    alert(form.id ? "Cập nhật sản phẩm thành công!" : "Thêm sản phẩm thành công!");
     setForm({
-      name: "", price: "", brand: "", category_id: "",
+      id: null, name: "", price: "", brand: "", category_id: "",
       cpu: "", ram: "", storage: "", screen: "",
       battery: "", os: "", camera_front: "", camera_rear: "",
       weight: "", color: "", dimensions: "", release_date: "",
       graphics_card: "", ports: "", warranty: ""
     });
     setImages([]);
+    setActiveTab("list"); // trở về danh sách
     fetchProducts();
   };
 
+  // Xóa sản phẩm
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+    const res = await fetch(`http://localhost:5000/admin/products/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) { const err = await res.json(); return alert(err.error); }
+    alert("Xóa sản phẩm thành công!");
+    fetchProducts();
+  };
+
+  // Sửa sản phẩm: điền dữ liệu vào form và chuyển tab
+  const handleEdit = (p) => {
+    setForm({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      brand: p.brand,
+      category_id: p.category_id,
+      cpu: p.cpu,
+      ram: p.ram,
+      storage: p.storage,
+      screen: p.screen,
+      battery: p.battery,
+      os: p.os,
+      camera_front: p.camera_front,
+      camera_rear: p.camera_rear,
+      weight: p.weight,
+      color: p.color,
+      dimensions: p.dimensions,
+      release_date: p.release_date,
+      graphics_card: p.graphics_card,
+      ports: p.ports,
+      warranty: p.warranty
+    });
+    setActiveTab("edit");
+  };
+
+  // Form render
+  const renderForm = () => (
+    <form onSubmit={handleSubmit}>
+      <div className="row mb-3">
+        <div className="col-md-3"><input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="form-control" required /></div>
+        <div className="col-md-2"><input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Price" className="form-control" required /></div>
+        <div className="col-md-3"><input name="brand" value={form.brand} onChange={handleChange} placeholder="Brand" className="form-control" required /></div>
+        <div className="col-md-4">
+          <select name="category_id" value={form.category_id} onChange={handleChange} className="form-select" required>
+            <option value="">Chọn danh mục</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <h5>Thông số kỹ thuật</h5>
+      <div className="row mb-3">
+        {["cpu","ram","storage","screen","battery","os","camera_front","camera_rear","weight","color","dimensions","release_date","graphics_card","ports","warranty"].map(f => (
+          <div className="col-md-3 mb-2" key={f}>
+            <input
+              name={f}
+              type={f==="release_date"?"date":"text"}
+              value={form[f] || ""}
+              onChange={handleChange}
+              placeholder={f.replace("_", " ").toUpperCase()}
+              className="form-control"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-3">
+        <label>Upload images</label>
+        <input type="file" multiple onChange={handleFileChange} className="form-control" />
+      </div>
+
+      <button type="submit" className="btn btn-primary mb-4">{form.id ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}</button>
+    </form>
+  );
+
   return (
     <div className="container mt-5">
-      <h3 className="mb-4">Thêm sản phẩm mới</h3>
-      <form onSubmit={handleSubmit}>
-        <div className="row mb-3">
-          <div className="col-md-3"><input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="form-control" required /></div>
-          <div className="col-md-2"><input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Price" className="form-control" required /></div>
-          <div className="col-md-3"><input name="brand" value={form.brand} onChange={handleChange} placeholder="Brand" className="form-control" required /></div>
-          <div className="col-md-4">
-            <select name="category_id" value={form.category_id} onChange={handleChange} className="form-select" required>
-              <option value="">Chọn danh mục</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-        </div>
+      <div className="mb-3">
+        <button className={`btn me-2 ${activeTab==="list"?"btn-primary":"btn-outline-primary"}`} onClick={() => setActiveTab("list")}>Danh sách sản phẩm</button>
+        <button className={`btn me-2 ${activeTab==="add"?"btn-primary":"btn-outline-primary"}`} onClick={() => { setActiveTab("add"); setForm({id:null, name:"", price:"", brand:"", category_id:"", cpu:"", ram:"", storage:"", screen:"", battery:"", os:"", camera_front:"", camera_rear:"", weight:"", color:"", dimensions:"", release_date:"", graphics_card:"", ports:"", warranty:""})}}>Thêm sản phẩm</button>
+      </div>
 
-        <h5>Thông số kỹ thuật</h5>
-        <div className="row mb-3">
-          {["cpu","ram","storage","screen","battery","os","camera_front","camera_rear","weight","color","dimensions","release_date","graphics_card","ports","warranty"].map(f => (
-            <div className="col-md-3 mb-2" key={f}>
-              <input
-                name={f}
-                type={f==="release_date"?"date":"text"}
-                value={form[f]}
-                onChange={handleChange}
-                placeholder={f.replace("_", " ").toUpperCase()}
-                className="form-control"
-              />
-            </div>
-          ))}
-        </div>
+      {activeTab === "list" && (
+        <>
+          <h3>Danh sách sản phẩm</h3>
+          <table className="table table-striped table-bordered">
+            <thead className="table-dark">
+              <tr>
+                <th>ID</th><th>Name</th><th>Price</th><th>Brand</th><th>Category</th><th>Images</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map(p => (
+                <tr key={p.id}>
+                  <td>{p.id}</td>
+                  <td>{p.name}</td>
+                  <td>{p.price}</td>
+                  <td>{p.brand}</td>
+                  <td>{p.category}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+                      {p.images && p.images.map((img, i) => (
+                        <img key={i} src={img} alt={p.name} style={{ width: "80px", height: "50px", objectFit: "cover", borderRadius: "4px" }} />
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}>Sửa</button>
+                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)}>Xóa</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
 
-        <div className="mb-3">
-          <label>Upload images</label>
-          <input type="file" multiple onChange={handleFileChange} className="form-control" />
-        </div>
+      {activeTab === "add" && (
+        <>
+          <h3>Thêm sản phẩm mới</h3>
+          {renderForm()}
+        </>
+      )}
 
-        <button type="submit" className="btn btn-primary mb-4">Thêm sản phẩm</button>
-      </form>
-
-      <h3>Danh sách sản phẩm</h3>
-      <table className="table table-striped table-bordered">
-        <thead className="table-dark">
-          <tr>
-            <th>ID</th><th>Name</th><th>Price</th><th>Brand</th><th>Category</th><th>Images</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(p => (
-            <tr key={p.id}>
-              <td>{p.id}</td>
-              <td>{p.name}</td>
-              <td>{p.price}</td>
-              <td>{p.brand}</td>
-              <td>{p.category}</td>
-              <td>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-                    {p.images && p.images.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        alt={p.name}
-                        style={{ width: "80px", height: "50px", objectFit: "cover", borderRadius: "4px" }}
-                      />
-                    ))}
-                  </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {activeTab === "edit" && (
+        <>
+          <h3>Chỉnh sửa sản phẩm</h3>
+          {renderForm()}
+        </>
+      )}
     </div>
   );
 }
