@@ -17,6 +17,9 @@ import PrivateRoute from "./components/PrivateRoute";
 import AdminUsers from "./pagesAdmin/AdminUsers";
 import AdminProducts from "./pagesAdmin/AdminProducts";
 import AdminOrders from "./pagesAdmin/AdminOrders";
+import ProfitDashboard from "./pagesAdmin/ProfitDashboard";
+import AdminBrands from "./pagesAdmin/AdminBrands";
+import AdminCategories from "./pagesAdmin/AdminCategories";
 function AppRoutes() {
   return (
     <Routes>
@@ -41,6 +44,9 @@ function AppRoutes() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="products" element={<AdminProducts />} />
         <Route path="orders" element={<AdminOrders />} />
+        <Route path="profit" element={<ProfitDashboard />} />
+        <Route path="categories" element={<AdminCategories />} />
+        <Route path="brands" element={<AdminBrands />} />
       </Route>
 
 

@@ -3,9 +3,10 @@ import React, { useEffect, useState } from "react";
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [form, setForm] = useState({
     id: null,
-    name: "", price: "", brand: "", category_id: "",
+    name: "", price: "", brand_id: "", category_id: "",cost_price: "", stock: "",
     cpu: "", ram: "", storage: "", screen: "",
     battery: "", os: "", camera_front: "", camera_rear: "",
     weight: "", color: "", dimensions: "", release_date: "",
@@ -23,6 +24,13 @@ export default function AdminProducts() {
       setProducts(data);
     }
   };
+  const fetchBrands = async () => {
+  const res = await fetch("http://localhost:5000/brands");
+  if (res.ok) {
+    const data = await res.json();
+    setBrands(data);
+    }
+  };
 
   // Lấy danh sách categories
   const fetchCategories = async () => {
@@ -36,6 +44,7 @@ export default function AdminProducts() {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchBrands();
   }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -109,6 +118,8 @@ export default function AdminProducts() {
       id: p.id,
       name: p.name,
       price: p.price,
+      cost_price: p.cost_price,
+      stock: p.stock,
       brand: p.brand,
       category_id: p.category_id,
       cpu: p.cpu,
@@ -136,13 +147,43 @@ export default function AdminProducts() {
       <div className="row mb-3">
         <div className="col-md-3"><input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="form-control" required /></div>
         <div className="col-md-2"><input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Price" className="form-control" required /></div>
-        <div className="col-md-3"><input name="brand" value={form.brand} onChange={handleChange} placeholder="Brand" className="form-control" required /></div>
-        <div className="col-md-4">
-          <select name="category_id" value={form.category_id} onChange={handleChange} className="form-select" required>
-            <option value="">Chọn danh mục</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+        <div className="col-md-3">
+  <select
+    name="brand_id"
+    value={form.brand_id}
+    onChange={handleChange}
+    className="form-select"
+    required
+  >
+    <option value="">Chọn thương hiệu</option>
+    {brands.map(b => (
+      <option key={b.id} value={b.id}>{b.name}</option>
+    ))}
+  </select>
+</div>
+
+        <div className="col-md-2">
+          <input name="cost_price" type="number" value={form.cost_price} onChange={handleChange} placeholder="Cost Price (Giá nhập)" className="form-control" required />
         </div>
+        <div className="col-md-2">
+          <input name="stock" type="number" value={form.stock} onChange={handleChange} placeholder="Stock (Tồn kho)" className="form-control" required />
+        </div>
+        <div className="mb-2">
+        <label className="form-label">Danh mục</label>
+        <select
+        name="category_id"
+        value={form.category_id}
+        onChange={handleChange}
+        className="form-select"
+        required
+        >
+        <option value="">Chọn danh mục</option>
+        {categories.map(c => (
+          <option key={c.id} value={c.id}>{c.name}</option>
+        ))}
+        </select>
+      </div>
+
       </div>
 
       <h5>Thông số kỹ thuật</h5>

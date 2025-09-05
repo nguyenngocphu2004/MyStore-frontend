@@ -42,6 +42,7 @@ function ProductCard({ product }) {
 
       <div className="card-body d-flex flex-column">
         <h5 className="card-title fw-semibold">{product.name}</h5>
+        <h5 className="card-title fw-semibold">{product.stock}</h5>
         <p className="text-danger fw-bold">
           {product.price.toLocaleString("vi-VN")}₫
         </p>

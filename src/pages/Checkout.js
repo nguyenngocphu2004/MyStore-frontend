@@ -98,7 +98,7 @@ function Checkout() {
       .then(({ status, data }) => {
         if (status === 200) {
           alert("Đặt hàng thành công!");
-          navigate("/orders");
+          navigate("/");
         } else {
           setError(data.error || "Đặt hàng thất bại");
         }
