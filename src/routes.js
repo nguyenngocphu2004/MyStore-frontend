@@ -23,6 +23,9 @@ import AdminCategories from "./pagesAdmin/AdminCategories";
 import AdminOrders from "./pagesAdmin/AdminOrders";
 import AdminOrderDetail from "./pagesAdmin/AdminOrderDetail";
 import Dashboard from "./pagesAdmin/Dashboard";
+import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import CheckoutCart from "./pages/CheckoutCart";
 function AppRoutes() {
   return (
     <Routes>
@@ -39,6 +42,9 @@ function AppRoutes() {
       <Route path="/cart" element={<Cart />} />
       <Route path="/guest-orders" element={<GuestOrders />} />
       <Route path="/admin" element={<AdminLogin />} />
+      <Route path="/payment/:orderId" element={<Payment />} />
+      <Route path="/checkout-cart" element={<CheckoutCart />} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
           <AdminLayout />

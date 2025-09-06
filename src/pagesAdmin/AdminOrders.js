@@ -24,10 +24,10 @@ export default function AdminOrders() {
   }, [token]);
 
   return (
-    <div>
-      <h2>Danh sách đơn hàng</h2>
-      <table className="table table-striped">
-        <thead>
+    <div className="container my-4">
+      <h2 className="mb-4">Danh sách đơn hàng thành công</h2>
+      <table className="table table-striped table-bordered">
+        <thead className="table-dark">
           <tr>
             <th>ID</th>
             <th>Khách/Người dùng</th>
@@ -36,6 +36,7 @@ export default function AdminOrders() {
             <th>Tổng tiền</th>
             <th>Phương thức</th>
             <th>Số món</th>
+            <th>Trạng thái</th>
             <th>Chi tiết</th>
           </tr>
         </thead>
@@ -50,6 +51,9 @@ export default function AdminOrders() {
               <td>{order.delivery_method}</td>
               <td>{order.items_count}</td>
               <td>
+                <span className="badge bg-success">Thành công</span>
+              </td>
+              <td>
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={() => navigate(`${order.id}`)}
@@ -61,6 +65,7 @@ export default function AdminOrders() {
           ))}
         </tbody>
       </table>
+      {orders.length === 0 && <p className="text-center mt-3">Không có đơn hàng nào thành công.</p>}
     </div>
   );
 }

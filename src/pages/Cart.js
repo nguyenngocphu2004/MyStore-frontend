@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Cart() {
@@ -7,6 +8,7 @@ function Cart() {
   const [showModal, setShowModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const token = localStorage.getItem("token");
+  const navigate = useNavigate(); // 👈 thêm
 
   // Lấy giỏ hàng từ API
   useEffect(() => {
@@ -29,7 +31,7 @@ function Cart() {
 
   // Cập nhật số lượng
   const updateQuantity = async (itemId, delta) => {
-    const item = cart.find(i => i.id === itemId);
+    const item = cart.find((i) => i.id === itemId);
     if (!item) return;
 
     const newQuantity = item.quantity + delta;
@@ -42,9 +44,15 @@ function Cart() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setCart(prevCart =>
-        prevCart.map(i =>
-          i.id === itemId ? { ...i, quantity: newQuantity, total_price: newQuantity * i.unit_price } : i
+      setCart((prevCart) =>
+        prevCart.map((i) =>
+          i.id === itemId
+            ? {
+                ...i,
+                quantity: newQuantity,
+                total_price: newQuantity * i.unit_price,
+              }
+            : i
         )
       );
     } catch (err) {
@@ -63,11 +71,18 @@ function Cart() {
     if (!itemToDelete) return;
 
     try {
-      await axios.delete(`http://localhost:5000/cart/delete/${itemToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCart(prevCart => prevCart.filter(i => i.id !== itemToDelete.id));
-      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: -itemToDelete.quantity }));
+      await axios.delete(
+        `http://localhost:5000/cart/delete/${itemToDelete.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setCart((prevCart) =>
+        prevCart.filter((i) => i.id !== itemToDelete.id)
+      );
+      window.dispatchEvent(
+        new CustomEvent("cartUpdated", { detail: -itemToDelete.quantity })
+      );
     } catch (err) {
       console.error("Lỗi xóa sản phẩm:", err);
     } finally {
@@ -76,9 +91,15 @@ function Cart() {
     }
   };
 
+  // 👉 Hàm chuyển sang trang checkout
+  const handleCheckout = () => {
+    navigate("/checkout-cart"); // chuyển qua route Checkout
+  };
+
   const totalPrice = cart.reduce((sum, item) => sum + item.total_price, 0);
 
-  if (loading) return <div className="container py-4">Đang tải giỏ hàng...</div>;
+  if (loading)
+    return <div className="container py-4">Đang tải giỏ hàng...</div>;
 
   return (
     <div className="container py-4">
@@ -99,28 +120,58 @@ function Cart() {
               </tr>
             </thead>
             <tbody>
-              {cart.map(item => (
+              {cart.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <img
-                      src={item.images?.[0] || "https://via.placeholder.com/300"}
+                      src={
+                        item.images?.[0] ||
+                        "https://via.placeholder.com/300"
+                      }
                       alt={item.name}
                       className="card-img-top"
-                      style={{ width: "100%", height: "50px", objectFit: "contain", backgroundColor: "#fff" }}
+                      style={{
+                        width: "100%",
+                        height: "50px",
+                        objectFit: "contain",
+                        backgroundColor: "#fff",
+                      }}
                     />
                   </td>
                   <td>{item.name}</td>
-                  <td>{Number(item.unit_price).toLocaleString("vi-VN")}₫</td>
+                  <td>
+                    {Number(item.unit_price).toLocaleString("vi-VN")}₫
+                  </td>
                   <td>
                     <div className="d-flex gap-2 align-items-center">
-                      <button className="btn btn-sm btn-outline-secondary" onClick={() => updateQuantity(item.id, -1)}>-</button>
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => updateQuantity(item.id, -1)}
+                      >
+                        -
+                      </button>
                       {item.quantity}
-                      <button className="btn btn-sm btn-outline-secondary" onClick={() => updateQuantity(item.id, 1)}>+</button>
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => updateQuantity(item.id, 1)}
+                      >
+                        +
+                      </button>
                     </div>
                   </td>
-                  <td>{(item.unit_price * item.quantity).toLocaleString("vi-VN")}₫</td>
                   <td>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteClick(item)}>Xóa</button>
+                    {(item.unit_price * item.quantity).toLocaleString(
+                      "vi-VN"
+                    )}
+                    ₫
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleDeleteClick(item)}
+                    >
+                      Xóa
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -128,29 +179,52 @@ function Cart() {
           </table>
 
           <h4 className="text-end">
-            Tổng cộng: <span className="text-danger">{totalPrice.toLocaleString("vi-VN")}₫</span>
+            Tổng cộng:{" "}
+            <span className="text-danger">
+              {totalPrice.toLocaleString("vi-VN")}₫
+            </span>
           </h4>
           <div className="text-end">
-            <button className="btn btn-success">Tiến hành đặt hàng</button>
+            <button className="btn btn-success" onClick={handleCheckout}>
+              Đặt hàng
+            </button>
           </div>
         </>
       )}
 
       {/* Modal xác nhận xóa với fade */}
       {showModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Xác nhận xóa</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
               </div>
               <div className="modal-body">
-                <p>Bạn có chắc muốn xóa sản phẩm "{itemToDelete?.name}" khỏi giỏ hàng?</p>
+                <p>
+                  Bạn có chắc muốn xóa sản phẩm "{itemToDelete?.name}" khỏi
+                  giỏ hàng?
+                </p>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
-                <button className="btn btn-danger" onClick={confirmDelete}>Xác nhận</button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Hủy
+                </button>
+                <button className="btn btn-danger" onClick={confirmDelete}>
+                  Xác nhận
+                </button>
               </div>
             </div>
           </div>

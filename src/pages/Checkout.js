@@ -97,8 +97,8 @@ function Checkout() {
       .then((res) => res.json().then((data) => ({ status: res.status, data })))
       .then(({ status, data }) => {
         if (status === 200) {
-          alert("Đặt hàng thành công!");
-          navigate("/");
+          const orderId = data.order.id;
+          navigate(`/payment/${orderId}`);
         } else {
           setError(data.error || "Đặt hàng thất bại");
         }
