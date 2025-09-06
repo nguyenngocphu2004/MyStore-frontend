@@ -60,17 +60,17 @@ export default function AdminBrands() {
     <div className="container mt-5">
       <div className="mb-3">
         <button className={`btn me-2 ${activeTab==="list"?"btn-primary":"btn-outline-primary"}`}
-          onClick={() => setActiveTab("list")}>Danh sách brand</button>
+          onClick={() => setActiveTab("list")}>Danh sách thương hiệu</button>
         <button className={`btn me-2 ${activeTab==="add"?"btn-primary":"btn-outline-primary"}`}
-          onClick={() => { setActiveTab("add"); setForm({id:null,name:""}); }}>Thêm brand</button>
+          onClick={() => { setActiveTab("add"); setForm({id:null,name:""}); }}>Thêm thương hiệu</button>
       </div>
 
       {activeTab==="list" && (
         <>
-          <h3>Danh sách brand</h3>
+          <h3>Danh sách thương hiệu</h3>
           <table className="table table-bordered">
             <thead className="table-dark">
-              <tr><th>ID</th><th>Tên brand</th><th>Actions</th></tr>
+              <tr><th>ID</th><th>Tên thương hiệu</th><th>Hành động</th></tr>
             </thead>
             <tbody>
               {brands.map(b => (

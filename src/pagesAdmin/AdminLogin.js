@@ -21,8 +21,12 @@ export default function AdminLogin() {
       const data = await res.json();
 
       if (res.ok) {
-        // Lưu token vào localStorage
+        // Lưu token + thông tin user
         localStorage.setItem("adminToken", data.token);
+        localStorage.setItem("adminUsername", data.username);
+        localStorage.setItem("adminRole", data.role);
+
+        // Chuyển sang dashboard
         navigate("/admin/dashboard");
       } else {
         setError(data.error || "Đăng nhập thất bại");
@@ -33,8 +37,8 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="container mt-5">
-      <h3>Admin Login</h3>
+    <div className="container mt-5" style={{ maxWidth: "400px" }}>
+      <h3 className="mb-4">Admin / Staff Login</h3>
       <form onSubmit={handleLogin}>
         <input
           className="form-control mb-2"

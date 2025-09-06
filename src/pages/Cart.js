@@ -4,9 +4,11 @@ import axios from "axios";
 function Cart() {
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const token = localStorage.getItem("token");
 
-  // Lấy giỏ hàng từ API khi component mount
+  // Lấy giỏ hàng từ API
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -21,14 +23,11 @@ function Cart() {
       }
     };
 
-    if (token) {
-      fetchCart();
-    } else {
-      setLoading(false);
-    }
+    if (token) fetchCart();
+    else setLoading(false);
   }, [token]);
 
-  // Cập nhật số lượng lên backend
+  // Cập nhật số lượng
   const updateQuantity = async (itemId, delta) => {
     const item = cart.find(i => i.id === itemId);
     if (!item) return;
@@ -53,19 +52,29 @@ function Cart() {
     }
   };
 
-  // Xóa sản phẩm khỏi giỏ hàng qua API
-  const removeItem = async (itemId) => {
-  try {
-    await axios.delete(`http://localhost:5000/cart/delete/${itemId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setCart(prevCart => prevCart.filter(i => i.id !== itemId));
-  } catch (err) {
-    console.error("Lỗi xóa sản phẩm:", err);
-  }
-};
+  // Khi nhấn nút Xóa → mở modal
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item);
+    setShowModal(true);
+  };
 
+  // Xác nhận xóa sản phẩm
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
 
+    try {
+      await axios.delete(`http://localhost:5000/cart/delete/${itemToDelete.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCart(prevCart => prevCart.filter(i => i.id !== itemToDelete.id));
+      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: -itemToDelete.quantity }));
+    } catch (err) {
+      console.error("Lỗi xóa sản phẩm:", err);
+    } finally {
+      setShowModal(false);
+      setItemToDelete(null);
+    }
+  };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.total_price, 0);
 
@@ -94,48 +103,24 @@ function Cart() {
                 <tr key={item.id}>
                   <td>
                     <img
-         src={
-            item.images && item.images.length > 0
-             ? `${item.images[0]}?v=${new Date().getTime()}`
-              : "https://via.placeholder.com/300"
-             }
-          alt={item.name || "Sản phẩm"}
-          className="card-img-top"
-          style={{
-            width: "100%",
-            height: "50px",
-            objectFit: "contain",
-            backgroundColor: "#fff",
-          }}
-      />
+                      src={item.images?.[0] || "https://via.placeholder.com/300"}
+                      alt={item.name}
+                      className="card-img-top"
+                      style={{ width: "100%", height: "50px", objectFit: "contain", backgroundColor: "#fff" }}
+                    />
                   </td>
                   <td>{item.name}</td>
                   <td>{Number(item.unit_price).toLocaleString("vi-VN")}₫</td>
                   <td>
                     <div className="d-flex gap-2 align-items-center">
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => updateQuantity(item.id, -1)}
-                      >
-                        -
-                      </button>
+                      <button className="btn btn-sm btn-outline-secondary" onClick={() => updateQuantity(item.id, -1)}>-</button>
                       {item.quantity}
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => updateQuantity(item.id, 1)}
-                      >
-                        +
-                      </button>
+                      <button className="btn btn-sm btn-outline-secondary" onClick={() => updateQuantity(item.id, 1)}>+</button>
                     </div>
                   </td>
                   <td>{(item.unit_price * item.quantity).toLocaleString("vi-VN")}₫</td>
                   <td>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      Xóa
-                    </button>
+                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteClick(item)}>Xóa</button>
                   </td>
                 </tr>
               ))}
@@ -149,6 +134,27 @@ function Cart() {
             <button className="btn btn-success">Tiến hành đặt hàng</button>
           </div>
         </>
+      )}
+
+      {/* Modal xác nhận xóa với fade */}
+      {showModal && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Xác nhận xóa</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>Bạn có chắc muốn xóa sản phẩm "{itemToDelete?.name}" khỏi giỏ hàng?</p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
+                <button className="btn btn-danger" onClick={confirmDelete}>Xác nhận</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

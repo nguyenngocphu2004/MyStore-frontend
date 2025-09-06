@@ -30,8 +30,8 @@ export default function AdminOrders() {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Khách/User</th>
-            <th>SĐT khách</th>
+            <th>Khách/Người dùng</th>
+            <th>SĐT</th>
             <th>Ngày tạo</th>
             <th>Tổng tiền</th>
             <th>Phương thức</th>

@@ -22,6 +22,7 @@ import AdminBrands from "./pagesAdmin/AdminBrands";
 import AdminCategories from "./pagesAdmin/AdminCategories";
 import AdminOrders from "./pagesAdmin/AdminOrders";
 import AdminOrderDetail from "./pagesAdmin/AdminOrderDetail";
+import Dashboard from "./pagesAdmin/Dashboard";
 function AppRoutes() {
   return (
     <Routes>
@@ -43,6 +44,7 @@ function AppRoutes() {
           <AdminLayout />
         </PrivateRoute>
       }>
+        <Route index element={<Dashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="products" element={<AdminProducts />} />
         <Route path="revenue" element={<AdminRevenue />} />

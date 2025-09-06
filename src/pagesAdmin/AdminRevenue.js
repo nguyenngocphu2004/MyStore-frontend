@@ -15,10 +15,13 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({});
-  const [activeTab, setActiveTab] = useState("month_stats"); // mặc định tab đầu
+  const [salesByProduct, setSalesByProduct] = useState([]);
+  const [activeTab, setActiveTab] = useState("month_stats");
   const token = localStorage.getItem("adminToken");
 
-  const fetchStats = async () => {
+
+  useEffect(() => {
+    const fetchStats = async () => {
     try {
       const res = await fetch("http://localhost:5000/admin/dashboard", {
         headers: { Authorization: `Bearer ${token}` }
@@ -34,9 +37,23 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => {
+  const fetchSalesByProduct = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/admin/sales_by_product", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSalesByProduct(data);
+      }
+    } catch (err) {
+      console.error("Lỗi fetch sales:", err);
+    }
+  };
+
     fetchStats();
-  }, []);
+    fetchSalesByProduct();
+  }, [token]);
 
   const createBarData = (labels, values, label, color) => ({
     labels: labels || [],
@@ -45,7 +62,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mt-5">
-      <h2>Dashboard Admin</h2>
+      <h2>Thống kê</h2>
       <div className="mb-3">
         <strong>Tổng doanh thu:</strong>{" "}
         {(stats.total_revenue || 0).toLocaleString()} VNĐ
@@ -70,7 +87,7 @@ export default function AdminDashboard() {
           }`}
           onClick={() => setActiveTab("brand_stats")}
         >
-          Sản phẩm & Doanh thu theo thương hiệu
+          Theo thương hiệu
         </button>
         <button
           className={`btn btn-outline-primary me-4 ${
@@ -78,13 +95,21 @@ export default function AdminDashboard() {
           }`}
           onClick={() => setActiveTab("category_stats")}
         >
-          Sản phẩm & Doanh thu theo danh mục
+          Theo danh mục
+        </button>
+        <button
+          className={`btn btn-outline-primary me-4 ${
+            activeTab === "product_stats" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("product_stats")}
+        >
+          Theo sản phẩm
         </button>
       </div>
 
       {/* Tab content */}
       <div className="mb-5">
-        {/* Gộp doanh thu & đơn hàng */}
+        {/* Doanh thu & đơn hàng theo tháng */}
         {activeTab === "month_stats" && (
           <div>
             <h5>Doanh thu & Đơn hàng theo tháng</h5>
@@ -115,7 +140,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Gộp sản phẩm & doanh thu thương hiệu */}
+        {/* Theo thương hiệu */}
         {activeTab === "brand_stats" && (
           <div>
             <h5>Sản phẩm & Doanh thu theo thương hiệu</h5>
@@ -146,7 +171,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Gộp sản phẩm & doanh thu danh mục */}
+        {/* Theo danh mục */}
         {activeTab === "category_stats" && (
           <div>
             <h5>Sản phẩm & Doanh thu theo danh mục</h5>
@@ -174,6 +199,39 @@ export default function AdminDashboard() {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Theo sản phẩm */}
+        {activeTab === "product_stats" && (
+          <div>
+            <h5>Số lượng sản phẩm đã bán</h5>
+            <table className="table table-striped table-hover shadow-sm">
+              <thead className="table-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Số lượng đã bán</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salesByProduct.length > 0 ? (
+                  salesByProduct.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{idx + 1}</td>
+                      <td>{item.name}</td>
+                      <td>{item.total_sold}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center">
+                      Chưa có dữ liệu bán hàng
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

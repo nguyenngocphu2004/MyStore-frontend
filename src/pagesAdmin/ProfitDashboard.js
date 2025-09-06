@@ -62,22 +62,11 @@ export default function ProfitDashboard() {
   });
 
   // Hàm tính tổng
-  const calcTotals = (arr) => {
-    if (!arr) return { revenue: 0, cost: 0, profit: 0 };
-    let revenue = 0,
-      cost = 0,
-      profit = 0;
-    arr.forEach((r) => {
-      revenue += r[1];
-      cost += r[2];
-      profit += r[3];
-    });
-    return { revenue, cost, profit };
-  };
+
 
   return (
     <div className="container mt-5">
-      <h2>Dashboard Lợi Nhuận</h2>
+      <h2>Lợi nhuận</h2>
 
       {/* Tabs */}
       <ul className="nav nav-tabs mb-3">
@@ -102,7 +91,7 @@ export default function ProfitDashboard() {
             className={`nav-link ${activeTab === "brand" ? "active" : ""}`}
             onClick={() => setActiveTab("brand")}
           >
-            Theo brand
+            Theo thương hiệu
           </button>
         </li>
         <li className="nav-item">
@@ -110,7 +99,7 @@ export default function ProfitDashboard() {
             className={`nav-link ${activeTab === "category" ? "active" : ""}`}
             onClick={() => setActiveTab("category")}
           >
-            Theo category
+            Theo danh mục
           </button>
         </li>
       </ul>
@@ -139,20 +128,9 @@ export default function ProfitDashboard() {
         <div>
           <h5>Doanh thu - Chi phí - Lợi nhuận theo tháng</h5>
           {(() => {
-            const totals = calcTotals(profitData.profit_by_month);
-            return (
-              <div className="mb-3">
-                <p>
-                  <b>Tổng Doanh thu:</b> {totals.revenue.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <b>Tổng Chi phí:</b> {totals.cost.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <b>Tổng Lợi nhuận:</b> {totals.profit.toLocaleString()} VNĐ
-                </p>
-              </div>
-            );
+
+
+            return
           })()}
           <Bar
             data={createBarData(
@@ -170,20 +148,8 @@ export default function ProfitDashboard() {
         <div>
           <h5>Doanh thu - Chi phí - Lợi nhuận theo brand</h5>
           {(() => {
-            const totals = calcTotals(profitData.profit_by_brand);
-            return (
-              <div className="mb-3">
-                <p>
-                  <b>Tổng Doanh thu:</b> {totals.revenue.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <b>Tổng Chi phí:</b> {totals.cost.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <b>Tổng Lợi nhuận:</b> {totals.profit.toLocaleString()} VNĐ
-                </p>
-              </div>
-            );
+
+            return
           })()}
           <Bar
             data={createBarData(
@@ -201,20 +167,9 @@ export default function ProfitDashboard() {
         <div>
           <h5>Doanh thu - Chi phí - Lợi nhuận theo category</h5>
           {(() => {
-            const totals = calcTotals(profitData.profit_by_category);
-            return (
-              <div className="mb-3">
-                <p>
-                  <b>Tổng Doanh thu:</b> {totals.revenue.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <b>Tổng Chi phí:</b> {totals.cost.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <b>Tổng Lợi nhuận:</b> {totals.profit.toLocaleString()} VNĐ
-                </p>
-              </div>
-            );
+
+            return
+
           })()}
           <Bar
             data={createBarData(

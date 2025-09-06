@@ -1,18 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
 
 function Header() {
   const [search, setSearch] = useState("");
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const navigate = useNavigate();
+  const [cartCount, setCartCount] = useState(0);
   const dropdownRef = useRef();
+  const navigate = useNavigate();
 
+  const token = localStorage.getItem("token");
+
+  // Lấy username và role khi load
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
-    if (storedUser) {
-      setUser(storedUser);
-    }
+    if (storedUser) setUser(storedUser);
 
     const handleLoginSuccess = () => {
       const newUser = localStorage.getItem("username");
@@ -34,6 +37,30 @@ function Header() {
     };
   }, []);
 
+  // Lấy số lượng giỏ hàng từ backend
+  const fetchCartCount = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get("http://localhost:5000/cart", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCartCount(res.data.length);
+    } catch (err) {
+      console.error(err);
+    }
+  },[token]);
+
+  // Lắng nghe sự kiện khi thêm sản phẩm
+  useEffect(() => {
+    fetchCartCount();
+    const handleCartUpdated = () => fetchCartCount();
+    window.addEventListener("cartUpdated", handleCartUpdated);
+
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdated);
+    };
+  }, [fetchCartCount]);
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && search.trim() !== "") {
       navigate(`/search?q=${encodeURIComponent(search.trim())}`);
@@ -46,6 +73,7 @@ function Header() {
     localStorage.removeItem("username");
     setUser(null);
     setDropdownOpen(false);
+    setCartCount(0);
     navigate("/");
   };
 
@@ -84,6 +112,7 @@ function Header() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
           />
+
           {user ? (
             <>
               <button
@@ -107,65 +136,48 @@ function Header() {
                     zIndex: 1050,
                   }}
                 >
-                  <button
-                    className="dropdown-item"
-                    type="button"
-                    onClick={goToProfile}
-                  >
+                  <button className="dropdown-item" type="button" onClick={goToProfile}>
                     Thông tin hồ sơ
                   </button>
-                  <button
-                    className="dropdown-item text-danger"
-                    type="button"
-                    onClick={handleLogout}
-                  >
+                  <button className="dropdown-item text-danger" type="button" onClick={handleLogout}>
                     Đăng xuất
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <Link to="/Login" className="btn btn-outline-dark">
-              Đăng nhập
-            </Link>
+            <Link to="/Login" className="btn btn-outline-dark">Đăng nhập</Link>
           )}
-          {/* Nút giỏ hàng có id để dùng hiệu ứng */}
+
+          {/* Nút giỏ hàng */}
           <button
-            className="btn btn-dark d-flex align-items-center gap-2"
+            className="btn btn-dark d-flex align-items-center gap-2 position-relative cart-icon"
             onClick={() => navigate("/cart")}
             title="Giỏ hàng"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              fill="currentColor"
-              className="bi bi-cart3"
-              viewBox="0 0 16 16"
-            >
-              <path d="M0 1.5A.5.5 0 0 1 .5 1h1a.5.5 0 0 1 .485.379L2.89 5H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 14H4a.5.5 0 0 1-.491-.408L1.01 2H.5a.5.5 0 0 1-.5-.5zM3.14 6l1.25 6.25a.5.5 0 0 0 .491.375h7.518a.5.5 0 0 0 .491-.408L13.89 6H3.14z" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-cart3" viewBox="0 0 16 16">
+              <path d="M0 1.5A.5.5 0 0 1 .5 1h1a.5.5 0 0 1 .485.379L2.89 5H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 14H4a.5.5 0 0 1-.491-.408L1.01 2H.5a.5.5 0 0 1-.5-.5zM3.14 6l1.25 6.25a.5.5 0 0 0 .491.375h7.518a.5.5 0 0 0 .491-.408L13.89 6H3.14z"/>
             </svg>
-            Giỏ hàng
+            {cartCount > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {cartCount}
+              </span>
+            )}
           </button>
+
+          {/* Nút tra cứu đơn hàng */}
           <button
-              className="btn btn-outline-secondary d-flex align-items-center gap-2"
-              onClick={() => navigate("/guest-orders")}
-              title="Tra cứu đơn hàng"
-                >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                fill="currentColor"
-                className="bi bi-search"
-                viewBox="0 0 16 16"
-                >
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0
-                1.415-1.415l-3.85-3.85zm-5.242.656a5.5 5.5 0 1 1
-                0-11 5.5 5.5 0 0 1 0 11z" />
-              </svg>
-              Tra cứu
-        </button>
+            className="btn btn-outline-secondary d-flex align-items-center gap-2"
+            onClick={() => navigate("/guest-orders")}
+            title="Tra cứu đơn hàng"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-search" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0
+              1.415-1.415l-3.85-3.85zm-5.242.656a5.5 5.5 0 1 1
+              0-11 5.5 5.5 0 0 1 0 11z" />
+            </svg>
+            Tra cứu
+          </button>
         </div>
       </div>
     </header>

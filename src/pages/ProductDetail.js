@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import {
   FaChevronLeft,
@@ -18,7 +18,6 @@ function ProductDetail() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
   const [fade, setFade] = useState(false);
-  const navigate = useNavigate();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [guestInfo, setGuestInfo] = useState({ name: "", phone: "" });
@@ -181,14 +180,29 @@ function ProductDetail() {
     }
 
     setAdding(true);
+  const cartIcon = document.querySelector(".cart-icon"); // header cart button cần thêm class này
+  const productImg = document.querySelector(".img-fluid"); // ảnh sản phẩm chính
+  if (productImg && cartIcon) {
+    const imgRect = productImg.getBoundingClientRect();
+    const cartRect = cartIcon.getBoundingClientRect();
+    const flyingImg = productImg.cloneNode(true);
+    flyingImg.style.left = `${imgRect.left}px`;
+    flyingImg.style.top = `${imgRect.top}px`;
+    flyingImg.classList.add("flying-img");
+
+    // Tính toán vị trí cuối (tính offset)
+    flyingImg.style.setProperty("--x", `${cartRect.left - imgRect.left}px`);
+    flyingImg.style.setProperty("--y", `${cartRect.top - imgRect.top}px`);
+
+    document.body.appendChild(flyingImg);
+  }
     try {
       await axios.post(
         "http://localhost:5000/cart/add",
         { product_id: product.id, quantity: 1 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("🛒 Đã thêm vào giỏ hàng!");
-      navigate("/");
+      window.dispatchEvent(new Event("cartUpdated"));
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
       if (error.response?.status === 401) {
@@ -356,7 +370,7 @@ function ProductDetail() {
                   </div>
 
                   {/* Nút trả lời chỉ hiện với Admin */}
-                  {userRole === "ADMIN" && (
+                  {(userRole === "ADMIN" || userRole === "STAFF") && (
                     <button
                       className="btn btn-sm btn-outline-primary mt-2"
                       onClick={() => setReplyingTo(cmt.id)}
@@ -394,7 +408,7 @@ function ProductDetail() {
                   {/* Hiển thị trả lời của admin (nếu có) */}
                   {cmt.admin_reply && (
                   <div className="mt-2 ms-4 p-2 border rounded bg-light">
-                    <strong>Admin:</strong> {cmt.admin_reply}
+                    <strong>PhuStore:</strong> {cmt.admin_reply}
                     <br />
                     <small className="text-muted">{cmt.reply_at}</small>
                   </div>

@@ -17,7 +17,7 @@ function ProductCard({ product }) {
 
   return (
     <div
-      className="card h-100 text-center shadow-sm"
+      className="card h-100 text-center shadow-sm py-3"
       onClick={handleCardClick}
       style={{ transition: "transform 0.3s", cursor: "pointer" }}
       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
