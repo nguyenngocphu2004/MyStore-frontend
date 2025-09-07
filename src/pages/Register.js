@@ -1,6 +1,9 @@
+// Register.js
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BiUser, BiLock, BiEnvelope, BiPhone } from "react-icons/bi";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Register() {
   const [form, setForm] = useState({
@@ -10,20 +13,18 @@ function Register() {
     confirmPassword: "",
     phone: "",
   });
-  const [message, setMessage] = useState(""); // state để hiển thị thông báo
-  const [messageType, setMessageType] = useState(""); // "success" | "error"
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (form.password !== form.confirmPassword) {
-      setMessage("Mật khẩu xác nhận không khớp!");
-      setMessageType("error");
+      toast.error("Mật khẩu xác nhận không khớp!");
       return;
     }
 
@@ -31,26 +32,28 @@ function Register() {
     delete sendData.confirmPassword;
     if (!sendData.phone) delete sendData.phone;
 
-    fetch("http://localhost:5000/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sendData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.message === "Đăng ký thành công") {
-          setMessage(data.message);
-          setMessageType("success");
-          setTimeout(() => navigate("/login"), 2000); // tự động chuyển hướng sau 2s
-        } else {
-          setMessage(data.error || "Đăng ký thất bại");
-          setMessageType("error");
-        }
-      })
-      .catch(() => {
-        setMessage("Lỗi server");
-        setMessageType("error");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sendData),
       });
+
+      const data = await res.json();
+
+      if (res.ok && data.message === "Đăng ký thành công") {
+        toast.success(data.message);
+        setTimeout(() => navigate("/login"), 2000); // tự động chuyển hướng
+      } else {
+        toast.error(data.error || "Đăng ký thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi server");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,18 +66,6 @@ function Register() {
         style={{ maxWidth: "450px", width: "100%" }}
       >
         <h2 className="text-center mb-4 fw-bold">Đăng ký</h2>
-
-        {/* Thông báo */}
-        {message && (
-          <div
-            className={`alert ${
-              messageType === "success" ? "alert-success" : "alert-danger"
-            } text-center`}
-            role="alert"
-          >
-            {message}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit}>
           {/* Username */}
@@ -171,10 +162,11 @@ function Register() {
               fontSize: "1rem",
               transition: "all 0.3s",
             }}
+            disabled={loading}
             onMouseEnter={(e) => (e.target.style.backgroundColor = "#ffdb4d")}
             onMouseLeave={(e) => (e.target.style.backgroundColor = "#ffcc00")}
           >
-            Đăng ký
+            {loading ? "Đang đăng ký..." : "Đăng ký"}
           </button>
         </form>
 

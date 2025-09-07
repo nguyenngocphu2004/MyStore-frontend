@@ -1,12 +1,13 @@
+// Login.js
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Toast from "../components/Toast";
 import { BiUser, BiLock } from "react-icons/bi";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Login() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,6 +17,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const res = await fetch("http://localhost:5000/login", {
         method: "POST",
@@ -26,27 +28,35 @@ function Login() {
       const data = await res.json();
 
       if (res.ok && data.access_token) {
+        // Lưu thông tin token & user
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("username", form.username);
         localStorage.setItem("role", data.role);
 
-        setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
+        // Hiển thị toast ngay lập tức
+        toast.success("Đăng nhập thành công!");
+
+        // Gửi event để Header cập nhật user
         window.dispatchEvent(new Event("loginSuccess"));
 
-        setTimeout(() => navigate("/"), 1000);
+        // Chuyển trang về home
+        navigate("/");
       } else {
-        setToast({ show: true, message: data.error || "Đăng nhập thất bại", type: "error" });
+        toast.error(data.error || "Đăng nhập thất bại");
       }
     } catch (err) {
       console.error(err);
-      setToast({ show: true, message: "Không thể kết nối tới server", type: "error" });
+      toast.error("Không thể kết nối tới server");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "90vh", background: "#f5f5f5" }}>
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ minHeight: "90vh", background: "#f5f5f5" }}
+    >
       <div className="card shadow-lg p-5 rounded" style={{ maxWidth: "400px", width: "100%" }}>
         <h2 className="text-center mb-4 fw-bold">Đăng nhập</h2>
 
@@ -107,13 +117,6 @@ function Login() {
             Đăng ký ngay
           </Link>
         </p>
-
-        <Toast
-          message={toast.message}
-          show={toast.show}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
       </div>
     </div>
   );

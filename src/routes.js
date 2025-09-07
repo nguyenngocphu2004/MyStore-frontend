@@ -26,6 +26,7 @@ import Dashboard from "./pagesAdmin/Dashboard";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import CheckoutCart from "./pages/CheckoutCart";
+import CheckoutCartInfo from "./pages/CheckoutCartInfo";
 function AppRoutes() {
   return (
     <Routes>
@@ -45,6 +46,7 @@ function AppRoutes() {
       <Route path="/payment/:orderId" element={<Payment />} />
       <Route path="/checkout-cart" element={<CheckoutCart />} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
+      <Route path="/checkout-cart-info" element={<CheckoutCartInfo />} />
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
           <AdminLayout />

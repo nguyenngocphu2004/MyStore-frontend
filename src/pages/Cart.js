@@ -92,7 +92,7 @@ function Cart() {
   };
 
   const handleCheckout = () => {
-    navigate("/checkout-cart"); // chuyển qua route Checkout
+    navigate("/checkout-cart-info"); // chuyển qua route Checkout
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.total_price, 0);
