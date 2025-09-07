@@ -204,36 +204,46 @@ export default function AdminDashboard() {
 
         {/* Theo sản phẩm */}
         {activeTab === "product_stats" && (
-          <div>
-            <h5>Số lượng sản phẩm đã bán</h5>
-            <table className="table table-striped table-hover shadow-sm">
-              <thead className="table-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Tên sản phẩm</th>
-                  <th>Số lượng đã bán</th>
-                </tr>
-              </thead>
-              <tbody>
-                {salesByProduct.length > 0 ? (
-                  salesByProduct.map((item, idx) => (
-                    <tr key={idx}>
-                      <td>{idx + 1}</td>
-                      <td>{item.name}</td>
-                      <td>{item.total_sold}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="3" className="text-center">
-                      Chưa có dữ liệu bán hàng
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+  <div>
+    <h5 className="mb-4">Thống kê theo sản phẩm theo danh mục</h5>
+
+    {salesByProduct && Object.keys(salesByProduct).length > 0 ? (
+      Object.entries(salesByProduct).map(([category, products]) => (
+        <div key={category} className="mb-5">
+          <h4 className="mb-3 text-primary">{category}</h4>
+          <div className="row">
+            {products.map((item, idx) => (
+              <div key={idx} className="col-md-4 mb-4">
+                <div className="card shadow-sm h-100">
+                  <div className="card-body">
+                    <h5 className="card-title">{item.name}</h5>
+                    <p className="card-text">
+                      <strong>Đã bán:</strong> {item.total_sold} <br />
+                      <strong>Tồn kho:</strong> {item.stock}
+                    </p>
+                    <span
+                      className={`badge ${
+                        item.status === "Bán chạy"
+                          ? "bg-success"
+                          : item.status === "Bình thường"
+                          ? "bg-warning text-dark"
+                          : "bg-danger"
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+      ))
+    ) : (
+      <p className="text-center">Chưa có dữ liệu bán hàng</p>
+    )}
+  </div>
+)}
       </div>
     </div>
   );

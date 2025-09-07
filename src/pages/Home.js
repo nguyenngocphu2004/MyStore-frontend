@@ -20,7 +20,7 @@ function Home() {
     },
     {
       img: "https://res.cloudinary.com/dbnra16ca/image/upload/v1757226917/pexels-bertellifotografia-799443_yemfst.jpg",
-      title: "Thiên nhiên",
+      title: "Ngắm nhìn thiên nhiên",
       subtitle: "Camera siêu nét",
     },
     {

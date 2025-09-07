@@ -152,7 +152,7 @@ function Header() {
 
           {/* Cart */}
           <button
-            className="btn  position-relative btn-outline-dark"
+            className="btn  position-relative btn-outline-dark cart-icon"
             onClick={() => navigate("/cart")}
             title="Giỏ hàng"
           >
@@ -170,7 +170,7 @@ function Header() {
             onClick={() => navigate("/guest-orders")}
             title="Tra cứu đơn hàng"
           >
-            Tra đơn hàng
+            Tra đơn cứu hàng
           </button>
         </div>
       </div>

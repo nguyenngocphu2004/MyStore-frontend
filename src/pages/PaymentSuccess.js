@@ -18,30 +18,33 @@ function PaymentSuccess() {
     }, 300);
 
     if (orderId && resultCode) {
-      fetch(`http://localhost:5000/api/payment_callback_confirm/${orderId}?resultCode=${resultCode}`, {
-        method: "POST",
-      })
+      fetch(
+        `http://localhost:5000/api/payment_callback_confirm/${orderId}?resultCode=${resultCode}`,
+        { method: "POST" }
+      )
         .then(res => res.json())
         .then(data => {
           clearInterval(progressInterval);
           setProgress(100);
+          console.log("Kết quả từ backend:", data);  // 👈 In toàn bộ object
+          console.log("Status nhận được:", data.status); // 👈 In riêng status
 
-          if (data.status === "PAID") {
+          if (data.status && data.status.toLowerCase() === "paid") {
             setStatus("success");
-            setMessage("Thanh toán thành công!");
+            setMessage("Thanh toán thành công! Đã gửi email xác nhận cho khách hàng.");
           } else {
             setStatus("failed");
-            setMessage("Thanh toán thất bại!");
+            setMessage("Thanh toán thất bại! Vui lòng thử lại.");
           }
 
-          setTimeout(() => navigate("/"), 2000);
+          setTimeout(() => navigate("/"), 3000);
         })
         .catch(() => {
           clearInterval(progressInterval);
           setProgress(100);
           setStatus("failed");
           setMessage("Có lỗi xảy ra khi xử lý thanh toán.");
-          setTimeout(() => navigate("/"), 2000);
+          setTimeout(() => navigate("/"), 3000);
         });
     } else {
       navigate("/");
@@ -55,7 +58,10 @@ function PaymentSuccess() {
       {status === "pending" && (
         <div className="w-100" style={{ maxWidth: "400px" }}>
           <h4 className="mb-3 text-center">{message}</h4>
-          <div className="progress" style={{ height: "25px", borderRadius: "12px" }}>
+          <div
+            className="progress"
+            style={{ height: "25px", borderRadius: "12px" }}
+          >
             <div
               className="progress-bar progress-bar-striped progress-bar-animated"
               role="progressbar"
@@ -70,17 +76,15 @@ function PaymentSuccess() {
 
       {status === "success" && (
         <div style={{ textAlign: "center", animation: "fadeScale 0.5s ease-out" }}>
-          <h3 className="mt-3">{message}</h3>
+          <h3 className="mt-3 text-success">{message}</h3>
         </div>
       )}
 
       {status === "failed" && (
         <div style={{ textAlign: "center", animation: "shake 0.5s" }}>
-          <h3 className="mt-3">{message}</h3>
+          <h3 className="mt-3 text-danger">{message}</h3>
         </div>
       )}
-
-
     </div>
   );
 }

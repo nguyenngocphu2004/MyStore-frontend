@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { BiUser, BiLock,BiEnvelope, BiPhone } from "react-icons/bi";
+import { BiUser, BiLock, BiEnvelope, BiPhone } from "react-icons/bi";
 
 function Register() {
   const [form, setForm] = useState({
@@ -10,6 +10,8 @@ function Register() {
     confirmPassword: "",
     phone: "",
   });
+  const [message, setMessage] = useState(""); // state để hiển thị thông báo
+  const [messageType, setMessageType] = useState(""); // "success" | "error"
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,8 +20,10 @@ function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (form.password !== form.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
+      setMessage("Mật khẩu xác nhận không khớp!");
+      setMessageType("error");
       return;
     }
 
@@ -35,15 +39,17 @@ function Register() {
       .then((res) => res.json())
       .then((data) => {
         if (data.message === "Đăng ký thành công") {
-          alert(data.message);
-          navigate("/login");
+          setMessage(data.message);
+          setMessageType("success");
+          setTimeout(() => navigate("/login"), 2000); // tự động chuyển hướng sau 2s
         } else {
-          alert(data.error || "Đăng ký thất bại");
+          setMessage(data.error || "Đăng ký thất bại");
+          setMessageType("error");
         }
       })
-      .catch((err) => {
-        console.error(err);
-        alert("Lỗi server");
+      .catch(() => {
+        setMessage("Lỗi server");
+        setMessageType("error");
       });
   };
 
@@ -52,8 +58,23 @@ function Register() {
       className="d-flex justify-content-center align-items-center"
       style={{ minHeight: "90vh", background: "#f5f5f5" }}
     >
-      <div className="card shadow-lg p-5 rounded" style={{ maxWidth: "450px", width: "100%" }}>
+      <div
+        className="card shadow-lg p-5 rounded"
+        style={{ maxWidth: "450px", width: "100%" }}
+      >
         <h2 className="text-center mb-4 fw-bold">Đăng ký</h2>
+
+        {/* Thông báo */}
+        {message && (
+          <div
+            className={`alert ${
+              messageType === "success" ? "alert-success" : "alert-danger"
+            } text-center`}
+            role="alert"
+          >
+            {message}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           {/* Username */}
