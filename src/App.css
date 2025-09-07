@@ -131,3 +131,104 @@
   z-index: 9999;
   animation: flyToCart 2s forwards;
 }
+
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  overflow: hidden;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.carousel-slides {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.carousel-item {
+  width: 100%;
+  height: 500px;
+  background-size: contain;
+  background-position: center;
+  position: relative;
+  opacity: 0;
+  transition: opacity 0.6s ease-in-out;
+}
+
+.carousel-item.active {
+  opacity: 1;
+}
+
+.carousel-caption {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.text-slide h1,
+.text-slide p,
+.text-slide button {
+  transform: translateY(30px);
+  opacity: 0;
+  transition: all 0.6s ease-in-out;
+}
+
+.carousel-item.active .text-slide h1,
+.carousel-item.active .text-slide p,
+.carousel-item.active .text-slide button {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.carousel-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  color: white;
+  background: rgba(0,0,0,0.3);
+  border: none;
+  padding: 0 8px;
+  cursor: pointer;
+  z-index: 2;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.carousel-control:hover {
+  background: rgba(0,0,0,0.6);
+}
+
+.carousel-control.prev {
+  left: 40px; /* gần slide */
+}
+
+.carousel-control.next {
+  right: 40px; /* gần slide */
+}
+
+.carousel-indicators {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.indicator.active {
+  background: rgba(255,255,255,1);
+}

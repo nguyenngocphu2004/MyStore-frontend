@@ -9,10 +9,9 @@ function Header() {
   const [cartCount, setCartCount] = useState(0);
   const dropdownRef = useRef();
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
 
-  // Lấy username và role khi load
+  // Load user
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
     if (storedUser) setUser(storedUser);
@@ -23,7 +22,6 @@ function Header() {
     };
     window.addEventListener("loginSuccess", handleLoginSuccess);
 
-    // Click ngoài dropdown để đóng
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -37,7 +35,7 @@ function Header() {
     };
   }, []);
 
-  // Lấy số lượng giỏ hàng từ backend
+  // Fetch cart count
   const fetchCartCount = useCallback(async () => {
     if (!token) return;
     try {
@@ -48,21 +46,19 @@ function Header() {
     } catch (err) {
       console.error(err);
     }
-  },[token]);
+  }, [token]);
 
-  // Lắng nghe sự kiện khi thêm sản phẩm
   useEffect(() => {
     fetchCartCount();
     const handleCartUpdated = () => fetchCartCount();
     window.addEventListener("cartUpdated", handleCartUpdated);
-
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdated);
     };
   }, [fetchCartCount]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && search.trim() !== "") {
+  const handleSearch = () => {
+    if (search.trim() !== "") {
       navigate(`/search?q=${encodeURIComponent(search.trim())}`);
       setSearch("");
     }
@@ -85,43 +81,52 @@ function Header() {
   return (
     <header className="bg-warning sticky-top shadow-sm" style={{ zIndex: 1020 }}>
       <div className="container d-flex align-items-center justify-content-between py-2">
-        <div className="d-flex align-items-center gap-4">
-          <Link to="/">
-            <img
-              src="https://www.thegioididong.com/Content/desktop/images/logo.png"
-              alt="logo"
-              style={{ height: "40px" }}
-            />
-          </Link>
+        {/* Logo */}
+        <Link to="/" className="text-decoration-none me-4">
+          <h1
+            className="m-0"
+            style={{
+              fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+              fontWeight: 700,
+              fontSize: "1.8rem",
+              color: "#000",
+              letterSpacing: "1px",
+            }}
+          >
+            PhuStore
+          </h1>
+        </Link>
 
-          <nav className="d-none d-md-flex gap-3 fw-medium">
-            <Link to="/phones" className="text-dark text-decoration-none">Điện thoại</Link>
-            <Link to="/laptops" className="text-dark text-decoration-none">Laptop</Link>
-            <Link to="/smartwatch" className="text-dark text-decoration-none">Smartwatch</Link>
-            <Link to="/Tablet" className="text-dark text-decoration-none">Tablet</Link>
-          </nav>
-        </div>
+        {/* Menu */}
+        <nav className="d-none d-md-flex gap-3 fw-medium me-4">
+          <Link to="/phones" className="text-dark text-decoration-none">Điện thoại</Link>
+          <Link to="/laptops" className="text-dark text-decoration-none">Laptop</Link>
+          <Link to="/smartwatch" className="text-dark text-decoration-none">Smartwatch</Link>
+          <Link to="/Tablet" className="text-dark text-decoration-none">Tablet</Link>
+        </nav>
 
+        {/* Search + Icons */}
         <div className="d-flex align-items-center gap-3 position-relative" ref={dropdownRef}>
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            className="form-control"
-            style={{ width: "200px" }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+          {/* Search */}
+          <div className="input-group" style={{ width: "220px" }}>
+            <input
+              type="text"
+              className="form-control rounded-start"
+              placeholder="Tìm kiếm sản phẩm..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              style={{ height: "38px",outline: "none",boxShadow: "none" }}
+            />
 
+          </div>
+
+          {/* User */}
           {user ? (
-            <>
-              <button
-                className="btn btn-outline-dark position-relative"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                Chào, {user} <span style={{ marginLeft: 5 }}>▼</span>
+            <div className="position-relative">
+              <button className="btn btn-outline-dark" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                {user} ▼
               </button>
-
               {dropdownOpen && (
                 <div
                   className="dropdown-menu show"
@@ -136,28 +141,22 @@ function Header() {
                     zIndex: 1050,
                   }}
                 >
-                  <button className="dropdown-item" type="button" onClick={goToProfile}>
-                    Thông tin hồ sơ
-                  </button>
-                  <button className="dropdown-item text-danger" type="button" onClick={handleLogout}>
-                    Đăng xuất
-                  </button>
+                  <button className="dropdown-item" onClick={goToProfile}>Thông tin hồ sơ</button>
+                  <button className="dropdown-item text-danger" onClick={handleLogout}>Đăng xuất</button>
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <Link to="/Login" className="btn btn-outline-dark">Đăng nhập</Link>
           )}
 
-          {/* Nút giỏ hàng */}
+          {/* Cart */}
           <button
-            className="btn btn-dark d-flex align-items-center gap-2 position-relative cart-icon"
+            className="btn  position-relative btn-outline-dark"
             onClick={() => navigate("/cart")}
             title="Giỏ hàng"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-cart3" viewBox="0 0 16 16">
-              <path d="M0 1.5A.5.5 0 0 1 .5 1h1a.5.5 0 0 1 .485.379L2.89 5H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 14H4a.5.5 0 0 1-.491-.408L1.01 2H.5a.5.5 0 0 1-.5-.5zM3.14 6l1.25 6.25a.5.5 0 0 0 .491.375h7.518a.5.5 0 0 0 .491-.408L13.89 6H3.14z"/>
-            </svg>
+            🛒
             {cartCount > 0 && (
               <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                 {cartCount}
@@ -165,18 +164,13 @@ function Header() {
             )}
           </button>
 
-          {/* Nút tra cứu đơn hàng */}
+          {/* Tra cứu đơn hàng */}
           <button
-            className="btn btn-outline-secondary d-flex align-items-center gap-2"
+            className="btn btn-outline-dark"
             onClick={() => navigate("/guest-orders")}
             title="Tra cứu đơn hàng"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-search" viewBox="0 0 16 16">
-              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0
-              1.415-1.415l-3.85-3.85zm-5.242.656a5.5 5.5 0 1 1
-              0-11 5.5 5.5 0 0 1 0 11z" />
-            </svg>
-            Tra cứu
+            Tra đơn hàng
           </button>
         </div>
       </div>

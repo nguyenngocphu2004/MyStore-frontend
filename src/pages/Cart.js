@@ -8,7 +8,7 @@ function Cart() {
   const [showModal, setShowModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const token = localStorage.getItem("token");
-  const navigate = useNavigate(); // 👈 thêm
+  const navigate = useNavigate();
 
   // Lấy giỏ hàng từ API
   useEffect(() => {
@@ -91,7 +91,6 @@ function Cart() {
     }
   };
 
-  // 👉 Hàm chuyển sang trang checkout
   const handleCheckout = () => {
     navigate("/checkout-cart"); // chuyển qua route Checkout
   };
@@ -103,7 +102,7 @@ function Cart() {
 
   return (
     <div className="container py-4">
-      <h2>🛒 Giỏ hàng</h2>
+      <h2>Giỏ hàng</h2>
       {cart.length === 0 ? (
         <p>Giỏ hàng của bạn đang trống.</p>
       ) : (
@@ -136,6 +135,7 @@ function Cart() {
                         objectFit: "contain",
                         backgroundColor: "#fff",
                       }}
+                      onClick={() => navigate(`/product/${item.product_id}`)}
                     />
                   </td>
                   <td>{item.name}</td>

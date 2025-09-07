@@ -4,6 +4,8 @@ export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailProduct, setDetailProduct] = useState(null);
   const [form, setForm] = useState({
     id: null,
     name: "",
@@ -53,6 +55,11 @@ export default function AdminProducts() {
       setBrands(data);
     }
   };
+  const openDetail = (p) => {
+  setDetailProduct(p);
+  setDetailOpen(true);
+    };
+  const closeDetail = () => setDetailOpen(false);
 
   const fetchCategories = async () => {
     const res = await fetch("http://localhost:5000/categories");
@@ -84,7 +91,7 @@ export default function AdminProducts() {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,openModal
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(form),
     });
@@ -420,6 +427,12 @@ export default function AdminProducts() {
                     </div>
                   </td>
                   <td>
+                    <button
+                        className="btn btn-sm btn-info me-2"
+                        onClick={() => openDetail(p)}
+                     >
+                        Chi tiết
+                    </button>
                     <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}>
                       Sửa
                     </button>
@@ -524,6 +537,69 @@ export default function AdminProducts() {
     </div>
   </div>
 )}
+{detailOpen && detailProduct && (
+  <div
+    className="modal-backdrop"
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+    }}
+    onClick={closeDetail}
+  >
+    <div
+      className="modal-content"
+      style={{
+        backgroundColor: "#fff",
+        padding: "20px",
+        borderRadius: "8px",
+        maxWidth: "700px",
+        maxHeight: "80%",
+        overflowY: "auto",
+        position: "relative",
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h5>Chi tiết sản phẩm - {detailProduct.name}</h5>
+      <button
+        onClick={closeDetail}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          border: "none",
+          background: "transparent",
+          fontSize: "20px",
+          cursor: "pointer",
+        }}
+      >
+        ×
+      </button>
+
+      <table className="table table-bordered mt-3">
+        <tbody>
+          {Object.entries(detailProduct).map(([key, value]) => {
+            if (key === "images") return null; // bỏ qua ảnh
+            return (
+              <tr key={key}>
+                <th style={{ width: "30%" }}>{key}</th>
+                <td>{value || "-"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
 
     </div>
   );

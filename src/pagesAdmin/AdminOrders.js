@@ -25,7 +25,7 @@ export default function AdminOrders() {
 
   return (
     <div className="container my-4">
-      <h2 className="mb-4">Danh sách đơn hàng thành công</h2>
+      <h2 className="mb-4">Danh sách đơn hàng</h2>
       <table className="table table-striped table-bordered">
         <thead className="table-dark">
           <tr>
@@ -65,7 +65,7 @@ export default function AdminOrders() {
           ))}
         </tbody>
       </table>
-      {orders.length === 0 && <p className="text-center mt-3">Không có đơn hàng nào thành công.</p>}
+      {orders.length === 0 && <p className="text-center mt-3">Không có đơn hàng nào .</p>}
     </div>
   );
 }

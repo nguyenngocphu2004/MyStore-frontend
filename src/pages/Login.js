@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Toast from "../components/Toast";
+import { BiUser, BiLock } from "react-icons/bi";
 
 function Login() {
   const [form, setForm] = useState({ username: "", password: "" });
@@ -27,12 +28,11 @@ function Login() {
       if (res.ok && data.access_token) {
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("username", form.username);
-        localStorage.setItem("role", data.role);  // ← lưu role
+        localStorage.setItem("role", data.role);
 
         setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
         window.dispatchEvent(new Event("loginSuccess"));
 
-        // Redirect sau 1s
         setTimeout(() => navigate("/"), 1000);
       } else {
         setToast({ show: true, message: data.error || "Đăng nhập thất bại", type: "error" });
@@ -46,42 +46,75 @@ function Login() {
   };
 
   return (
-    <div className="container my-5">
-      <h2>Đăng nhập</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          name="username"
-          placeholder="Tên đăng nhập"
-          onChange={handleChange}
-          className="form-control my-2"
-          required
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Mật khẩu"
-          onChange={handleChange}
-          className="form-control my-2"
-          required
-        />
-        <button className="btn btn-success" type="submit" disabled={loading}>
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-        </button>
-      </form>
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "90vh", background: "#f5f5f5" }}>
+      <div className="card shadow-lg p-5 rounded" style={{ maxWidth: "400px", width: "100%" }}>
+        <h2 className="text-center mb-4 fw-bold">Đăng nhập</h2>
 
-      <p className="mt-3">
-        Chưa có tài khoản?{" "}
-        <Link to="/register" className="text-primary">
-          Đăng ký ngay
-        </Link>
-      </p>
+        <form onSubmit={handleSubmit}>
+          {/* Username */}
+          <div className="input-group mb-3">
+            <span className="input-group-text bg-white border-end-0">
+              <BiUser size={20} />
+            </span>
+            <input
+              name="username"
+              placeholder="Tên đăng nhập"
+              onChange={handleChange}
+              className="form-control border-start-0"
+              style={{ height: "45px" }}
+              required
+            />
+          </div>
 
-      <Toast
-        message={toast.message}
-        show={toast.show}
-        type={toast.type} // bạn có thể dùng type để đổi màu toast
-        onClose={() => setToast({ ...toast, show: false })}
-      />
+          {/* Password */}
+          <div className="input-group mb-3">
+            <span className="input-group-text bg-white border-end-0">
+              <BiLock size={20} />
+            </span>
+            <input
+              name="password"
+              type="password"
+              placeholder="Mật khẩu"
+              onChange={handleChange}
+              className="form-control border-start-0"
+              style={{ height: "45px" }}
+              required
+            />
+          </div>
+
+          {/* Button */}
+          <button
+            type="submit"
+            className="btn w-100 fw-bold"
+            style={{
+              backgroundColor: "#ffcc00",
+              color: "#000",
+              height: "45px",
+              fontSize: "1rem",
+              transition: "all 0.3s",
+            }}
+            disabled={loading}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#ffdb4d")}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = "#ffcc00")}
+          >
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
+        </form>
+
+        <p className="text-center mt-3 mb-0">
+          Chưa có tài khoản?{" "}
+          <Link to="/register" className="text-warning fw-bold">
+            Đăng ký ngay
+          </Link>
+        </p>
+
+        <Toast
+          message={toast.message}
+          show={toast.show}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      </div>
     </div>
   );
 }

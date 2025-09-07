@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import AppRoutes from "./routes";
 import Footer from "./components/Footer";
 import "./App.css";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 
 function AppContent() {
   const location = useLocation();
@@ -21,6 +22,8 @@ function App() {
   return (
     <BrowserRouter>
       <AppContent />
+      <ScrollToTopButton />
+
     </BrowserRouter>
   );
 }
