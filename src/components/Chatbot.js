@@ -1,33 +1,60 @@
 import { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
+
+let socket = null;
 
 function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Quản lý mở/đóng
+  const [isOpen, setIsOpen] = useState(false);
+  const [isChatWithAdmin, setIsChatWithAdmin] = useState(false); // NEW: xác định đang chat admin
   const chatRef = useRef(null);
 
-  const quickReplies = [
-    "Gặp quản trị viên",
-    "Hỗ trợ kỹ thuật",
-  ];
+  const quickReplies = ["Gặp quản trị viên", "Hỗ trợ kỹ thuật"];
+
+  // Kết nối socket khi cần
+  const connectToSocket = () => {
+    if (!socket) {
+      socket = io("http://localhost:5000"); // Địa chỉ backend Flask
+      socket.on("connect", () => {
+        console.log("Connected to socket server");
+      });
+
+      // Nhận phản hồi từ admin
+      socket.on("admin-message", (text) => {
+        setMessages((prev) => [...prev, { sender: "bot", text }]);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Disconnected from socket");
+        socket = null;
+      });
+    }
+  };
 
   const sendMessage = async (msgText) => {
     if (!msgText.trim()) return;
 
     const userMessage = { sender: "user", text: msgText };
     setMessages((prev) => [...prev, userMessage]);
-    setLoading(true);
+
+    // Nếu là "Gặp quản trị viên" → bật socket
     if (msgText === "Gặp quản trị viên") {
-      setLoading(false);
-      const adminReply = {
-        sender: "bot",
-        text: "Xin chào, tôi là quản trị viên, tôi có thể giúp gì cho bạn?",
-      };
-      setMessages((prev) => [...prev, adminReply]);
+      setIsChatWithAdmin(true);
+      connectToSocket(); // kết nối socket
+      socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
       return;
     }
 
+    // Nếu đang chat với quản trị viên → gửi qua socket
+    if (isChatWithAdmin) {
+      socket.emit("client-message", msgText);
+      return;
+    }
+
+    // Ngược lại gửi API như cũ
+    setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/chatbot", {
         method: "POST",
@@ -36,11 +63,17 @@ function Chatbot() {
       });
 
       const data = await res.json();
-      const botMessage = { sender: "bot", text: data.response || "Bot không phản hồi." };
+      const botMessage = {
+        sender: "bot",
+        text: data.response || "Bot không phản hồi.",
+      };
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [...prev, { sender: "bot", text: "Lỗi kết nối server!" }]);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "Lỗi kết nối server!" },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -51,7 +84,6 @@ function Chatbot() {
     setInput("");
   };
 
-  // Scroll xuống cuối khi có tin nhắn mới hoặc đang loading
   useEffect(() => {
     chatRef.current?.scrollTo({
       top: chatRef.current.scrollHeight,
@@ -137,9 +169,6 @@ function Chatbot() {
           </div>
         </div>
       )}
-
-      {/* CSS nội tuyến hoặc bạn chuyển vào file .css */}
-
     </>
   );
 }
