@@ -31,14 +31,14 @@ function ScrollToTopButton() {
           onClick={scrollToTop}
           style={{
             position: "fixed",
-            bottom: "30px",
-            right: "30px",
+            bottom: "100px",
+            right: "20px",
             backgroundColor: "white",
             color: "black",
             border: "none",
             borderRadius: "50%",
-            width: "50px",
-            height: "50px",
+            width: "60px",
+            height: "60px",
             cursor: "pointer",
             fontSize: "24px",
             zIndex: 1000,

@@ -4,6 +4,7 @@ import ProductCard from "../components/ProductCard";
 function Home() {
   const [products, setProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showChatbot, setShowChatbot] = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:5000/products")
@@ -15,7 +16,7 @@ function Home() {
   const slides = [
     {
       img: "https://res.cloudinary.com/dbnra16ca/image/upload/v1757226918/pexels-pixabay-4158_xkfapw.jpg",
-      title: "Hệ sinh thái  Apple",
+      title: "Hệ sinh thái Apple",
       subtitle: "Tận hưởng công nghệ",
     },
     {
@@ -30,7 +31,6 @@ function Home() {
     },
   ];
 
-  // Auto slide every 3s
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -44,7 +44,7 @@ function Home() {
 
   return (
     <div>
-      {/* Banner carousel */}
+      {/* Carousel Banner */}
       <section className="carousel-container my-4">
         <div className="carousel-slides">
           {slides.map((slide, idx) => (
@@ -56,13 +56,12 @@ function Home() {
               <div className="carousel-caption text-slide">
                 <h1 className="display-5 fw-bold text-white">{slide.title}</h1>
                 <p className="lead text-white">{slide.subtitle}</p>
-
               </div>
             </div>
           ))}
         </div>
 
-        {/* Controls */}
+        {/* Carousel Controls */}
         <button className="carousel-control prev" onClick={prevSlide}>
           &#10094;
         </button>
@@ -70,7 +69,7 @@ function Home() {
           &#10095;
         </button>
 
-        {/* Indicators */}
+        {/* Carousel Indicators */}
         <div className="carousel-indicators">
           {slides.map((_, idx) => (
             <span
@@ -82,7 +81,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Danh sách sản phẩm */}
+      {/* Product List */}
       <main className="container my-5">
         <div className="row g-4">
           {products.map((p) => (
@@ -92,6 +91,11 @@ function Home() {
           ))}
         </div>
       </main>
+
+      {/* Nút mở/tắt Chatbot */}
+
+
+
     </div>
   );
 }

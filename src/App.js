@@ -4,6 +4,7 @@ import AppRoutes from "./routes";
 import Footer from "./components/Footer";
 import "./App.css";
 import ScrollToTopButton from "./components/ScrollToTopButton";
+import Chatbot from "./components/Chatbot";
 
 function AppContent() {
   const location = useLocation();
@@ -14,6 +15,7 @@ function AppContent() {
       {!isAdmin && <Header />}
       <AppRoutes />
       {!isAdmin && <Footer />}
+      {!isAdmin && <Chatbot />}
     </>
   );
 }
