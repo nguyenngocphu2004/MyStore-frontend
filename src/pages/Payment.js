@@ -1,4 +1,3 @@
-// src/pages/Payment.js
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -8,121 +7,135 @@ function Payment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [order, setOrder] = useState(null);
+  const [selectedMethod, setSelectedMethod] = useState("");
 
   useEffect(() => {
     fetch(`http://localhost:5000/orders/${orderId}`)
-      .then(res => res.json())
-      .then(data => setOrder(data))
+      .then((res) => res.json())
+      .then((data) => setOrder(data))
       .catch(() => setOrder(null));
   }, [orderId]);
 
-  const handlePayMomo = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`http://localhost:5000/api/create_momo_payment/${orderId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      const data = await res.json();
-      if (res.ok && data.payUrl) {
-        window.location.href = data.payUrl;
-      } else {
-        setError(data.error || "Không tạo được link thanh toán Momo");
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Lỗi kết nối server Momo");
-    } finally {
-      setLoading(false);
+  const handlePay = async () => {
+    if (!selectedMethod) {
+      setError("⚠️ Vui lòng chọn phương thức thanh toán");
+      return;
     }
-  };
-
-  const handlePayZaloPay = async () => {
     setLoading(true);
     setError("");
+
     try {
-      const res = await fetch(`http://localhost:5000/api/create_zalopay_payment/${orderId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      const data = await res.json();
-      if (res.ok && data.payUrl) {
-        window.location.href = data.payUrl;
-      } else {
-        setError(data.error || "Không tạo được link thanh toán ZaloPay");
+      let url = "";
+      if (selectedMethod === "Momo") {
+        url = `http://localhost:5000/api/create_momo_payment/${orderId}`;
+      } else if (selectedMethod === "ZaloPay") {
+        url = `http://localhost:5000/api/create_zalopay_payment/${orderId}`;
+      } else if (selectedMethod === "COD") {
+        url = `http://localhost:5000/api/pay_cod/${orderId}`;
       }
-    } catch (err) {
-      console.error(err);
-      setError("Lỗi kết nối server ZaloPay");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleCOD = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`http://localhost:5000/api/pay_cod/${orderId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
+      const res = await fetch(url, { method: "POST" });
       const data = await res.json();
+
       if (res.ok) {
-        alert("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
-        navigate("/orders");
+        if (selectedMethod === "COD") {
+          alert("✅ Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+          navigate("/orders");
+        } else if (data.payUrl) {
+          window.location.href = data.payUrl;
+        }
       } else {
-        setError(data.error || "Không thể xác nhận COD");
+        setError(data.error || "Không thể xử lý thanh toán");
       }
     } catch (err) {
       console.error(err);
-      setError("Lỗi kết nối server COD");
+      setError("Lỗi kết nối server");
     } finally {
       setLoading(false);
     }
   };
+
+  const paymentOptions = [
+    {
+      value: "Momo",
+      label: "Thanh toán qua MoMo",
+      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/MoMo_Logo_dlzdlh.png",
+    },
+    {
+      value: "ZaloPay",
+      label: "Thanh toán qua ZaloPay",
+      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/Zalo_logo_rjmkwb.png",
+    },
+    {
+      value: "COD",
+      label: "Thanh toán khi nhận hàng",
+      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082325/cash-on-delivery-banner_ddmuaa.png",
+    },
+  ];
 
   return (
-    <div className="container my-5">
-      <div className="card shadow-sm">
-        <div className="card-header bg-primary text-white">
-          <h4 className="mb-0">Thanh toán cho đơn hàng #{orderId}</h4>
+    <div className="container my-5 d-flex justify-content-center">
+      <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
+        {/* Header màu vàng */}
+        <div
+          className="card-header bg-warning text-center"
+          style={{ backgroundColor: "#ffba00", color: "#000" }}
+        >
+          <h4 className="mb-0">Chọn phương thức thanh toán</h4>
         </div>
+
         <div className="card-body">
           {order ? (
             <>
+              <p className="text-center fs-5 mb-3">
+                <strong>Tổng tiền: </strong>
+                <span className="text-danger">
+                  {order.total_price?.toLocaleString("vi-VN")}₫
+                </span>
+              </p>
+
               <div className="mb-4">
-                <h5>Thông tin đơn hàng</h5>
-                <p><strong>Tổng tiền:</strong> {order.total_price?.toLocaleString("vi-VN")}₫</p>
-                <p><strong>Trạng thái:</strong> <span className={`badge ${order.status === "PENDING" ? "bg-warning" : order.status === "PAID" ? "bg-success" : "bg-secondary"}`}>{order.status}</span></p>
+                {paymentOptions.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`d-flex align-items-center border rounded p-3 mb-3 shadow-sm ${
+                      selectedMethod === opt.value ? "bg-warning bg-opacity-25 border-warning" : ""
+                    }`}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value={opt.value}
+                      checked={selectedMethod === opt.value}
+                      onChange={(e) => setSelectedMethod(e.target.value)}
+                      className="d-none"
+                    />
+                    <img src={opt.logo} alt={opt.value} width={40} className="me-3" />
+                    <span className="fs-6">{opt.label}</span>
+                  </label>
+                ))}
               </div>
-              <div className="mb-4">
-                <h5>Sản phẩm</h5>
-                <ul className="list-group">
-                  {order.items.map(item => (
-                    <li key={item.product_id} className="list-group-item d-flex justify-content-between align-items-center">
-                      Sản phẩm #{item.product_id} x {item.quantity}
-                      <span>{item.unit_price.toLocaleString("vi-VN")}₫</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {error && <div className="alert alert-danger">{error}</div>}
-              <div className="d-flex flex-column flex-md-row gap-3 mt-4">
-                <button className="btn btn-primary flex-fill" onClick={handlePayMomo} disabled={loading}>
-                  {loading ? "Đang tạo thanh toán..." : "Thanh toán Momo"}
-                </button>
-                <button className="btn btn-success flex-fill" onClick={handlePayZaloPay} disabled={loading}>
-                  {loading ? "Đang tạo thanh toán..." : "Thanh toán ZaloPay"}
-                </button>
-                <button className="btn btn-warning flex-fill" onClick={handleCOD} disabled={loading}>
-                  {loading ? "Đang xử lý..." : "Thanh toán khi nhận hàng (COD)"}
-                </button>
-              </div>
+
+              {error && <div className="alert alert-danger text-center">{error}</div>}
+
+              {/* Button màu vàng */}
+              <button
+                className="w-100 py-2 fs-5"
+                style={{
+                  backgroundColor: "#ffba00",
+                  border: "none",
+                  color: "#000",
+                  borderRadius: "6px",
+                }}
+                onClick={handlePay}
+                disabled={loading}
+              >
+                {loading ? "Đang xử lý..." : "Thanh toán"}
+              </button>
             </>
           ) : (
-            <p>Đang tải thông tin đơn hàng...</p>
+            <p className="text-center">Đang tải thông tin đơn hàng...</p>
           )}
         </div>
       </div>

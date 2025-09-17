@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-
 function CheckoutCart() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedMethod, setSelectedMethod] = useState("");
+  const [error, setError] = useState("");
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -33,73 +34,111 @@ function CheckoutCart() {
     }
   }, [token, navigate]);
 
-  // Thanh toán Momo
-  const handleMomoPayment = async () => {
+  const handlePay = async () => {
+    if (!selectedMethod) {
+      setError("⚠️ Vui lòng chọn phương thức thanh toán");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
     try {
-      const res = await axios.post(
-        `http://localhost:5000/api/create_momo_payment/${order.order_id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      window.location.href = res.data.payUrl;
+      let url = "";
+      if (selectedMethod === "Momo") {
+        url = `http://localhost:5000/api/create_momo_payment/${order.order_id}`;
+      } else if (selectedMethod === "ZaloPay") {
+        url = `http://localhost:5000/api/create_zalopay_payment/${order.order_id}`;
+      } else if (selectedMethod === "COD") {
+        url = `http://localhost:5000/api/pay_cod/${order.order_id}`;
+      }
+
+      const res = await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const data = res.data;
+
+      if (selectedMethod === "COD") {
+        alert("✅ Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+        navigate("/orders");
+      } else if (data.payUrl) {
+        window.location.href = data.payUrl;
+      } else {
+        setError(data.error || "Không thể xử lý thanh toán");
+      }
     } catch (err) {
-      console.error("Lỗi Momo:", err);
+      console.error(err);
+      setError("Lỗi kết nối server");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Thanh toán ZaloPay (chưa backend)
-  const handleZaloPayPayment = async () => {
-    alert("Chức năng ZaloPay sẽ được triển khai sau.");
-    // Khi backend sẵn sàng, thay alert bằng call API:
-    // try {
-    //   const res = await axios.post(
-    //     `http://localhost:5000/api/create_zalopay_payment/${order.order_id}`,
-    //     {},
-    //     { headers: { Authorization: `Bearer ${token}` } }
-    //   );
-    //   window.location.href = res.data.payUrl;
-    // } catch (err) {
-    //   console.error("Lỗi ZaloPay:", err);
-    // }
-  };
+  const paymentOptions = [
+    {
+      value: "Momo",
+      label: "Thanh toán qua MoMo",
+      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/MoMo_Logo_dlzdlh.png",
+    },
+    {
+      value: "ZaloPay",
+      label: "Thanh toán qua ZaloPay",
+      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/Zalo_logo_rjmkwb.png",
+    },
+    {
+      value: "COD",
+      label: "Thanh toán khi nhận hàng",
+      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082325/cash-on-delivery-banner_ddmuaa.png",
+    },
+  ];
 
-  if (loading)
-    return <div className="container py-5 text-center">Đang xử lý...</div>;
-
-  if (!order)
-    return <div className="container py-5 text-center">Không tạo được đơn hàng.</div>;
+  if (loading) return <div className="container py-5 text-center">Đang xử lý...</div>;
+  if (!order) return <div className="container py-5 text-center">Không tạo được đơn hàng.</div>;
 
   return (
-    <div className="container py-5">
-      <div className="card shadow-sm p-4 mx-auto" style={{ maxWidth: "500px" }}>
-        <h2 className="mb-3 text-center">Thanh toán đơn hàng #{order.order_id}</h2>
-        <p className="text-center fs-5">
-          Tổng tiền: <strong>{order.total_price.toLocaleString("vi-VN")}₫</strong>
-        </p>
+    <div className="container my-5 d-flex justify-content-center">
+      <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
+        {/* Header màu vàng */}
+        <div className="card-header bg-warning text-center" style={{ backgroundColor: "#ffba00", color: "#000" }}>
+          <h4 className="mb-0">Thanh toán đơn hàng #{order.order_id}</h4>
+        </div>
 
-        <h5 className="mt-4 mb-3">Chọn phương thức thanh toán:</h5>
-        <div className="d-flex flex-column gap-3">
-          <button
-            className="btn btn-primary d-flex align-items-center justify-content-center gap-2"
-            onClick={handleMomoPayment}
-            style={{ fontWeight: "500" }}
-          >
-             Thanh toán qua Momo
-          </button>
+        <div className="card-body">
+          <p className="text-center fs-5 mb-3">
+            <strong>Tổng tiền: </strong>
+            <span className="text-danger">{order.total_price.toLocaleString("vi-VN")}₫</span>
+          </p>
 
-          <button
-            className="btn btn-warning d-flex align-items-center justify-content-center gap-2"
-            onClick={handleZaloPayPayment}
-            style={{ fontWeight: "500", color: "#fff" }}
-          >
-            Thanh toán qua ZaloPay
-          </button>
+          <div className="mb-4">
+            {paymentOptions.map((opt) => (
+              <label
+                key={opt.value}
+                className={`d-flex align-items-center border rounded p-3 mb-3 shadow-sm ${
+                  selectedMethod === opt.value ? "bg-warning bg-opacity-25 border-warning" : ""
+                }`}
+                style={{ cursor: "pointer" }}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value={opt.value}
+                  checked={selectedMethod === opt.value}
+                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  className="d-none"
+                />
+                <img src={opt.logo} alt={opt.value} width={40} className="me-3" />
+                <span className="fs-6">{opt.label}</span>
+              </label>
+            ))}
+          </div>
 
+          {error && <div className="alert alert-danger text-center">{error}</div>}
+
+          {/* Button thanh toán màu vàng */}
           <button
-            className="btn btn-success d-flex align-items-center justify-content-center gap-2"
-            style={{ fontWeight: "500" }}
+            className="w-100 py-2 fs-5"
+            style={{ backgroundColor: "#ffba00", border: "none", color: "#000", borderRadius: "6px" }}
+            onClick={handlePay}
+            disabled={loading}
           >
-             Thanh toán khi nhận hàng
+            {loading ? "Đang xử lý..." : "Thanh toán"}
           </button>
         </div>
       </div>

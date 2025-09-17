@@ -409,3 +409,13 @@
 .quick-reply-btn:hover:not(:disabled) {
   background-color: #004ecc;
 }
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #ced4da !important; /* hoặc giữ màu border mặc định */
+}
+
+

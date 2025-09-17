@@ -9,7 +9,17 @@ function Profile() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
-
+  const DELIVERY_TEXT = {
+  PENDING: "Chờ xác nhận",
+  PROCESSING: "Đang xử lý",
+  SHIPPING: "Đang giao",
+  DELIVERED: "Đã giao",
+  };
+  const STATUS_TEXT = {
+  PENDING: "Chưa thanh toán",
+  PAID: "Đã thanh toán",
+  FAILED: "Thanh toán thất bại",
+};
   // State cho modal chi tiết đơn hàng
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -238,6 +248,12 @@ function Profile() {
                         <div><strong>Mã đơn:</strong> #{order.id}</div>
                         <div><strong>Ngày đặt:</strong> {new Date(order.created_at).toLocaleString()}</div>
                         <div><strong>Tổng tiền:</strong> {order.total_price?.toLocaleString()} VND</div>
+                        <div>
+                            <strong>Trạng thái thanh toán:</strong> {STATUS_TEXT[order.status]}
+                        </div>
+                        <div>
+                            <strong>Trạng thái giao hàng:</strong> {DELIVERY_TEXT[order.delivery_status]}
+                        </div>
                       </div>
                       <button
                         className="btn btn-sm btn-primary"
@@ -282,6 +298,7 @@ function Profile() {
               <li><strong>SĐT:</strong> {selectedOrder.user?.phone || selectedOrder.guest_phone}</li>
               <li><strong>Địa chỉ:</strong> {selectedOrder.address}</li>
               <li><strong>Ngày đặt:</strong> {selectedOrder.created_at}</li>
+
               <li><strong>Tổng tiền:</strong> <span className="text-danger fw-bold">{selectedOrder.total_price?.toLocaleString()} VND</span></li>
             </ul>
           </div>
