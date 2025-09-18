@@ -1,8 +1,8 @@
-// Login.js
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BiUser, BiLock } from "react-icons/bi";
 import { toast } from "react-toastify";
+import { GoogleLogin } from '@react-oauth/google';
 import "react-toastify/dist/ReactToastify.css";
 
 function Login() {
@@ -28,18 +28,12 @@ function Login() {
       const data = await res.json();
 
       if (res.ok && data.access_token) {
-        // Lưu thông tin token & user
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("username", form.username);
         localStorage.setItem("role", data.role);
 
-        // Hiển thị toast ngay lập tức
         toast.success("Đăng nhập thành công!");
-
-        // Gửi event để Header cập nhật user
         window.dispatchEvent(new Event("loginSuccess"));
-
-        // Chuyển trang về home
         navigate("/");
       } else {
         toast.error(data.error || "Đăng nhập thất bại");
@@ -52,6 +46,40 @@ function Login() {
     }
   };
 
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credentialResponse.credential }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.access_token) {
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("username", data.username);
+        localStorage.setItem("role", data.role);
+
+        toast.success("Đăng nhập Google thành công!");
+        window.dispatchEvent(new Event("loginSuccess"));
+        navigate("/");
+      } else {
+        toast.error(data.error || "Đăng nhập Google thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể kết nối tới server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    toast.error("Đăng nhập Google thất bại");
+  };
+
   return (
     <div
       className="d-flex justify-content-center align-items-center"
@@ -61,7 +89,6 @@ function Login() {
         <h2 className="text-center mb-4 fw-bold">Đăng nhập</h2>
 
         <form onSubmit={handleSubmit}>
-          {/* Username */}
           <div className="input-group mb-3">
             <span className="input-group-text bg-white border-end-0">
               <BiUser size={20} />
@@ -76,7 +103,6 @@ function Login() {
             />
           </div>
 
-          {/* Password */}
           <div className="input-group mb-3">
             <span className="input-group-text bg-white border-end-0">
               <BiLock size={20} />
@@ -92,10 +118,9 @@ function Login() {
             />
           </div>
 
-          {/* Button */}
           <button
             type="submit"
-            className="btn w-100 fw-bold"
+            className="btn w-100 fw-bold mb-3"
             style={{
               backgroundColor: "#ffcc00",
               color: "#000",
@@ -110,6 +135,12 @@ function Login() {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
+
+        <GoogleLogin
+          onSuccess={handleGoogleLoginSuccess}
+          onError={handleGoogleLoginError}
+          useOneTap
+        />
 
         <p className="text-center mt-3 mb-0">
           Chưa có tài khoản?{" "}
