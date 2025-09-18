@@ -44,7 +44,7 @@ export default function AdminProducts() {
     const res = await fetch("http://localhost:5000/products");
     if (res.ok) {
       const data = await res.json();
-      setProducts(data);
+      setProducts(data.products || []);
     }
   };
 
@@ -212,7 +212,7 @@ export default function AdminProducts() {
             name="name"
             value={form.name}
             onChange={handleChange}
-            placeholder="Name"
+            placeholder="Tên sản phẩm"
             className="form-control"
             required
           />
@@ -223,7 +223,7 @@ export default function AdminProducts() {
             type="number"
             value={form.price}
             onChange={handleChange}
-            placeholder="Price"
+            placeholder="Giá"
             className="form-control"
             required
           />
@@ -250,7 +250,7 @@ export default function AdminProducts() {
             type="number"
             value={form.cost_price}
             onChange={handleChange}
-            placeholder="Cost Price"
+            placeholder="Giá nhập"
             className="form-control"
             required
           />
@@ -261,7 +261,7 @@ export default function AdminProducts() {
             type="number"
             value={form.stock}
             onChange={handleChange}
-            placeholder="Stock"
+            placeholder="Số lượng"
             className="form-control"
             required
           />
@@ -288,21 +288,21 @@ export default function AdminProducts() {
       <h5>Thông số kỹ thuật</h5>
       <div className="row mb-3">
         {[
-          "cpu",
-          "ram",
-          "storage",
-          "screen",
-          "battery",
-          "os",
-          "camera_front",
-          "camera_rear",
-          "weight",
-          "color",
-          "dimensions",
-          "release_date",
-          "graphics_card",
-          "ports",
-          "warranty",
+          "CPU",
+          "RAM",
+          "Bộ nhớ",
+          "Màn hình",
+          "Pin",
+          "Hệ điều hành",
+          "Camera trước",
+          "Camera sau",
+          "Trọng lượng",
+          "Màu sắc",
+          "Kích thước",
+          "Ngày sản xuất",
+          "Thẻ đồ họa",
+          "Cổng",
+          "Bảo hành",
         ].map((f) => (
           <div className="col-md-3 mb-2" key={f}>
             <input
@@ -310,7 +310,7 @@ export default function AdminProducts() {
               type={f === "release_date" ? "date" : "text"}
               value={form[f] || ""}
               onChange={handleChange}
-              placeholder={f.replace("_", " ").toUpperCase()}
+              placeholder={f.replace("_", " ")}
               className="form-control"
             />
           </div>
@@ -599,6 +599,7 @@ export default function AdminProducts() {
     </div>
   </div>
 )}
+
 
 
     </div>

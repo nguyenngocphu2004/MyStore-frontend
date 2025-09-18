@@ -8,6 +8,11 @@ export default function AdminOrders() {
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
 
+  const PAYMENT_TEXT = {
+  PENDING: "Chưa thanh toán",
+  PAID: "Đã thanh toán",
+  FAILED: "Thanh toán thất bại",
+  };
   const DELIVERY_TEXT = {
     PENDING: "Chờ xác nhận",
     PROCESSING: "Đang xử lý",
@@ -34,7 +39,26 @@ export default function AdminOrders() {
     };
     fetchOrders();
   }, [token]);
+  const handlePaymentStatusChange = async (orderId, newStatus) => {
+  try {
+    await axios.put(
+      `http://localhost:5000/admin/orders/${orderId}/payment_status`,
+      { status: newStatus },  // hoặc { payment_status: newStatus } tùy API
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId ? { ...o, status: newStatus } : o
+      )
+    );
+
+    showToast("Cập nhật trạng thái thanh toán thành công!", "success");
+  } catch (err) {
+    console.error(err);
+    showToast("Cập nhật trạng thái thanh toán thất bại!", "danger");
+  }
+};
   const handleDeliveryChange = async (orderId, newStatus) => {
     try {
       await axios.put(
@@ -91,6 +115,7 @@ export default function AdminOrders() {
             <th>Phương thức</th>
             <th>Số món</th>
             <th>Trạng thái giao hàng</th>
+            <th>Trạng thái thanh toán</th>
             <th>Chi tiết</th>
           </tr>
         </thead>
@@ -109,12 +134,26 @@ export default function AdminOrders() {
                   className="form-select form-select-sm"
                   value={order.delivery_status || "PENDING"}
                   onChange={(e) => handleDeliveryChange(order.id, e.target.value)}
+                  disabled={order.delivery_status === "DELIVERED"}
                 >
                   <option value="PENDING">{DELIVERY_TEXT.PENDING}</option>
                   <option value="PROCESSING">{DELIVERY_TEXT.PROCESSING}</option>
                   <option value="SHIPPING">{DELIVERY_TEXT.SHIPPING}</option>
-                  <option value="DELIVERED">{DELIVERY_TEXT.DELIVERED}</option>
+                  <option value="DELIVERED" disabled>{DELIVERY_TEXT.DELIVERED}</option>
                 </select>
+              </td>
+              <td>
+              <select
+              className="form-select form-select-sm"
+              value={order.status || "PENDING"}
+              onChange={(e) => handlePaymentStatusChange(order.id, e.target.value)}
+              disabled={order.status === "PAID" || order.status === "FAILED"}
+            >
+              <option value="PENDING">{PAYMENT_TEXT.PENDING}</option>
+              <option value="PAID">{PAYMENT_TEXT.PAID}</option>
+              <option value="FAILED">{PAYMENT_TEXT.FAILED}</option>
+                </select>
+
               </td>
               <td>
                 <button

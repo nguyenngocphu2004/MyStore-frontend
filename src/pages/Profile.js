@@ -9,27 +9,27 @@ function Profile() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
-  const DELIVERY_TEXT = {
-  PENDING: "Chờ xác nhận",
-  PROCESSING: "Đang xử lý",
-  SHIPPING: "Đang giao",
-  DELIVERED: "Đã giao",
-  };
-  const STATUS_TEXT = {
-  PENDING: "Chưa thanh toán",
-  PAID: "Đã thanh toán",
-  FAILED: "Thanh toán thất bại",
-};
-  // State cho modal chi tiết đơn hàng
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  const DELIVERY_TEXT = {
+    PENDING: "Chờ xác nhận",
+    PROCESSING: "Đang xử lý",
+    SHIPPING: "Đang giao",
+    DELIVERED: "Đã giao",
+  };
+
+  const STATUS_TEXT = {
+    PENDING: "Chưa thanh toán",
+    PAID: "Đã thanh toán",
+    FAILED: "Thanh toán thất bại",
+  };
+
   if (!token) navigate("/login");
 
-  // Fetch profile
   const fetchProfile = () => {
     fetch("http://localhost:5000/profile", {
       headers: { Authorization: `Bearer ${token}` },
@@ -46,7 +46,6 @@ function Profile() {
       .catch(err => console.error(err));
   };
 
-  // Fetch danh sách đơn hàng
   const fetchOrders = () => {
     fetch("http://localhost:5000/orders", {
       headers: { Authorization: `Bearer ${token}` },
@@ -56,7 +55,6 @@ function Profile() {
       .catch(err => console.error(err));
   };
 
-  // Fetch chi tiết đơn hàng
   const fetchOrderDetail = (orderId) => {
     fetch(`http://localhost:5000/admin/orders/${orderId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -69,12 +67,28 @@ function Profile() {
       .catch(err => console.error(err));
   };
 
+  const handleConfirmReceived = (orderId) => {
+    if (!window.confirm("Bạn chắc chắn đã nhận được hàng?")) return;
+
+    fetch(`http://localhost:5000/orders/${orderId}/confirm_received`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Cập nhật thất bại");
+        return res.json();
+      })
+      .then(() => fetchOrders())
+      .catch(err => alert(err.message));
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchOrders();
   }, []);
 
-  // Hàm xử lý form profile
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleEditClick = () => {
@@ -144,21 +158,14 @@ function Profile() {
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Thông tin hồ sơ</h5>
               {!editing && (
-                <button
-                  className="btn btn-sm btn-outline-light"
-                  onClick={handleEditClick}
-                >
+                <button className="btn btn-sm btn-outline-light" onClick={handleEditClick}>
                   Chỉnh sửa
                 </button>
               )}
             </div>
             <div className="card-body">
-              {successMsg && (
-                <div className="alert alert-success">{successMsg}</div>
-              )}
-              {error && editing && (
-                <div className="alert alert-danger">{error}</div>
-              )}
+              {successMsg && <div className="alert alert-success">{successMsg}</div>}
+              {error && editing && <div className="alert alert-danger">{error}</div>}
               {!editing ? (
                 <>
                   <p><strong>Tên đăng nhập:</strong> {profile.username}</p>
@@ -206,19 +213,10 @@ function Profile() {
                     />
                   </div>
                   <div className="d-flex justify-content-end gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={handleCancel}
-                      disabled={loading}
-                    >
+                    <button type="button" className="btn btn-secondary" onClick={handleCancel} disabled={loading}>
                       Hủy
                     </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={loading}
-                    >
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
                       {loading ? "Đang lưu..." : "Lưu thay đổi"}
                     </button>
                   </div>
@@ -239,31 +237,39 @@ function Profile() {
                 <p>Bạn chưa có đơn hàng nào.</p>
               ) : (
                 <ul className="list-group list-group-flush">
-                  {orders.map((order) => (
-                    <li
-                      key={order.id}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                    >
-                      <div>
-                        <div><strong>Mã đơn:</strong> #{order.id}</div>
-                        <div><strong>Ngày đặt:</strong> {new Date(order.created_at).toLocaleString()}</div>
-                        <div><strong>Tổng tiền:</strong> {order.total_price?.toLocaleString()} VND</div>
-                        <div>
-                            <strong>Trạng thái thanh toán:</strong> {STATUS_TEXT[order.status]}
-                        </div>
-                        <div>
-                            <strong>Trạng thái giao hàng:</strong> {DELIVERY_TEXT[order.delivery_status]}
-                        </div>
-                      </div>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={() => fetchOrderDetail(order.id)}
-                      >
-                        Xem chi tiết
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+  {orders.map((order) => (
+    <li key={order.id} className="list-group-item position-relative" style={{ minHeight: "140px" }}>
+      <div>
+        <div><strong>Mã đơn:</strong> #{order.id}</div>
+        <div><strong>Ngày đặt:</strong> {new Date(order.created_at).toLocaleString()}</div>
+        <div><strong>Tổng tiền:</strong> {order.total_price?.toLocaleString()} VND</div>
+        <div><strong>Trạng thái thanh toán:</strong> {STATUS_TEXT[order.status]}</div>
+        <div><strong>Trạng thái giao hàng:</strong> {DELIVERY_TEXT[order.delivery_status]}</div>
+      </div>
+
+      {/* Nút nằm góc phải dưới cùng */}
+      <div className="position-absolute bottom-0 end-0 p-2 d-flex gap-2">
+
+
+        {order.delivery_status === "SHIPPING" && (
+          <button
+            className="btn btn-sm btn-success"
+            onClick={() => handleConfirmReceived(order.id)}
+          >
+            Đã nhận được hàng
+          </button>
+        )}
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => fetchOrderDetail(order.id)}
+        >
+          Xem chi tiết
+        </button>
+      </div>
+    </li>
+  ))}
+</ul>
+
               )}
             </div>
           </div>
@@ -271,81 +277,73 @@ function Profile() {
       </div>
 
       {/* Modal chi tiết đơn hàng */}
-{showModal && selectedOrder && (
-  <div
-    className="modal fade show d-block"
-    tabIndex="-1"
-    style={{ background: "rgba(0,0,0,0.5)" }}
-  >
-    <div className="modal-dialog modal-lg modal-dialog-centered animate-modal">
-      <div className="modal-content shadow-lg rounded-4 border-0">
-        <div className="modal-header bg-primary text-white">
-          <h5 className="modal-title">
-            <i className="bi bi-receipt"></i> Chi tiết đơn hàng #{selectedOrder.id}
-          </h5>
-          <button
-            type="button"
-            className="btn-close btn-close-white"
-            onClick={() => setShowModal(false)}
-          ></button>
-        </div>
-        <div className="modal-body">
-          {/* Thông tin chung */}
-          <div className="mb-3">
-            <h6 className="text-secondary">Thông tin đơn hàng</h6>
-            <ul className="list-unstyled mb-0">
-              <li><strong>Người đặt:</strong> {selectedOrder.user?.username || selectedOrder.guest_name}</li>
-              <li><strong>SĐT:</strong> {selectedOrder.user?.phone || selectedOrder.guest_phone}</li>
-              <li><strong>Địa chỉ:</strong> {selectedOrder.address}</li>
-              <li><strong>Ngày đặt:</strong> {selectedOrder.created_at}</li>
+      {showModal && selectedOrder && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-lg modal-dialog-centered animate-modal">
+            <div className="modal-content shadow-lg rounded-4 border-0">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">
+                  <i className="bi bi-receipt"></i> Chi tiết đơn hàng #{selectedOrder.id}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <h6 className="text-secondary">Thông tin đơn hàng</h6>
+                  <ul className="list-unstyled mb-0">
+                    <li><strong>Người đặt:</strong> {selectedOrder.user?.username || selectedOrder.guest_name}</li>
+                    <li><strong>SĐT:</strong> {selectedOrder.user?.phone || selectedOrder.guest_phone}</li>
+                    <li><strong>Địa chỉ:</strong> {selectedOrder.address}</li>
+                    <li><strong>Ngày đặt:</strong> {selectedOrder.created_at}</li>
+                    <li><strong>Tổng tiền:</strong> <span className="text-danger fw-bold">{selectedOrder.total_price?.toLocaleString()} VND</span></li>
+                  </ul>
+                </div>
 
-              <li><strong>Tổng tiền:</strong> <span className="text-danger fw-bold">{selectedOrder.total_price?.toLocaleString()} VND</span></li>
-            </ul>
-          </div>
-
-          {/* Danh sách sản phẩm */}
-          <div>
-            <h6 className="text-secondary">Sản phẩm</h6>
-            <div className="table-responsive">
-              <table className="table table-striped table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>#</th>
-                    <th>Tên sản phẩm</th>
-                    <th className="text-center">Số lượng</th>
-                    <th className="text-end">Đơn giá</th>
-                    <th className="text-end">Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedOrder.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td>{idx + 1}</td>
-                      <td>{item.product_name}</td>
-                      <td className="text-center">{item.quantity}</td>
-                      <td className="text-end">{item.unit_price.toLocaleString()} VND</td>
-                      <td className="text-end">{item.total_price.toLocaleString()} VND</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                <div>
+                  <h6 className="text-secondary">Sản phẩm</h6>
+                  <div className="table-responsive">
+                    <table className="table table-striped table-hover align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th>#</th>
+                          <th>Tên sản phẩm</th>
+                          <th className="text-center">Số lượng</th>
+                          <th className="text-end">Đơn giá</th>
+                          <th className="text-end">Thành tiền</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>{idx + 1}</td>
+                            <td>{item.product_name}</td>
+                            <td className="text-center">{item.quantity}</td>
+                            <td className="text-end">{item.unit_price.toLocaleString()} VND</td>
+                            <td className="text-end">{item.total_price.toLocaleString()} VND</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>
-        <div className="modal-footer">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setShowModal(false)}
-          >
-            Đóng
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 }

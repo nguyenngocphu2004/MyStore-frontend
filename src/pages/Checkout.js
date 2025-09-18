@@ -31,13 +31,13 @@ function Checkout() {
         .then((data) => {
           setIsLoggedIn(true);
           setUserInfo({
-            name: data.username || "",
+            name: data.username || data.email || "",
             phone: data.phone || "",
             email: data.email || "",
           });
           // Copy vào checkout form
           setCheckoutInfo({
-            name: data.username || "",
+            name: data.username || data.email || "",
             phone: data.phone || "",
             email: data.email || "",
           });

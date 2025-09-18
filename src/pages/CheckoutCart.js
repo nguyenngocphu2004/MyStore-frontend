@@ -56,7 +56,7 @@ function CheckoutCart() {
       const data = res.data;
 
       if (selectedMethod === "COD") {
-        alert("✅ Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+        alert("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
         navigate("/orders");
       } else if (data.payUrl) {
         window.location.href = data.payUrl;

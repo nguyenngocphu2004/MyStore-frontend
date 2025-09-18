@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -29,7 +30,7 @@ function ProductDetail() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [userRole, setUserRole] = useState(null);
-
+  const [message, setMessage] = useState(null);
   // Lấy role user (lưu ở localStorage khi login)
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
@@ -50,7 +51,7 @@ function ProductDetail() {
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || rating === 0) {
-      alert("Vui lòng nhập bình luận và chọn số sao");
+      setMessage({ type: "warning", text: "Vui lòng nhập bình luận và chọn số sao" });
       return;
     }
 
@@ -76,14 +77,15 @@ function ProductDetail() {
       setGuestInfo({ name: "", phone: "" });
       setRating(0);
     } catch (err) {
-      alert(err.response?.data?.error || "Lỗi khi gửi bình luận");
+      setMessage({ type: "warning", text: err.response?.data?.error || "Lỗi khi gửi bình luận" });
     }
   };
 
   // Gửi reply (chỉ Admin)
   const handleReplySubmit = async (commentId) => {
     if (!replyContent.trim()) {
-      alert("Vui lòng nhập nội dung trả lời");
+      setMessage({ type: "warning", text: "Vui lòng nhập nội dung trả lời" });
+
       return;
     }
 
@@ -109,7 +111,7 @@ function ProductDetail() {
       setReplyingTo(null);
       setReplyContent("");
     } catch (err) {
-      alert(err.response?.data?.error || "Lỗi khi trả lời bình luận");
+      setMessage({ type: "warning", text: err.response?.data?.error || "Lỗi khi trả lời bình luận" });
     }
   };
 
@@ -152,6 +154,12 @@ function ProductDetail() {
       setFade(false);
     }, 500);
   };
+    useEffect(() => {
+  if (message) {
+    const timer = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [message]);
 
   // Vote comment
   const handleVote = async (commentId, action) => {
@@ -169,13 +177,14 @@ function ProductDetail() {
         )
       );
     } catch (err) {
-      alert(err.response?.data?.error || "Lỗi khi vote");
+      setMessage({ type: "warning", text: err.response?.data?.error || "Lỗi khi vote" });
     }
   };
 
   const handleAddToCart = async () => {
     if (!token) {
-      alert("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng");
+      setMessage({ type: "warning", text: "Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng" });
+
       return;
     }
 
@@ -206,14 +215,15 @@ function ProductDetail() {
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
       if (error.response?.status === 401) {
-        alert("Bạn cần đăng nhập lại!");
+        setMessage({ type: "warning", text: "Bạn cần đăng nhập lại!" });
       } else {
-        alert("Thêm vào giỏ hàng thất bại!");
+        setMessage({ type: "warning", text: "Thêm vào giỏ hàng thất bại!" });
       }
     } finally {
       setAdding(false);
     }
   };
+
 
   if (!product) return <p>Đang tải...</p>;
 
@@ -239,6 +249,15 @@ function ProductDetail() {
 
   return (
     <div className="container py-4">
+{message && (
+  <div className="toast-container">
+    <div className="toast-box">
+      {message.text}
+    </div>
+  </div>
+)}
+
+
       <div className="row">
         {/* Ảnh sản phẩm */}
         <div className="col-md-5 text-center">
@@ -370,7 +389,7 @@ function ProductDetail() {
                   </div>
 
                   {/* Nút trả lời chỉ hiện với Admin */}
-                  {(userRole === "ADMIN" || userRole === "STAFF") && (
+                  {(userRole === "ADMIN" || userRole === "STAFF")&& !cmt.admin_reply && (
                     <button
                       className="btn btn-sm btn-outline-primary mt-2"
                       onClick={() => setReplyingTo(cmt.id)}
@@ -468,7 +487,7 @@ function ProductDetail() {
               onChange={(e) => setNewComment(e.target.value)}
               required
             />
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-warning">
               Gửi bình luận
             </button>
           </form>

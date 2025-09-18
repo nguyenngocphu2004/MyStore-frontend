@@ -117,7 +117,11 @@ function Login() {
               required
             />
           </div>
-
+            <div className="d-flex justify-content-end mb-3">
+  <Link to="/forgot-password" className="text-danger fw-bold" style={{ fontSize: "0.9rem" }}>
+    Quên mật khẩu?
+  </Link>
+</div>
           <button
             type="submit"
             className="btn w-100 fw-bold mb-3"
@@ -134,6 +138,7 @@ function Login() {
           >
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
+
         </form>
 
         <GoogleLogin

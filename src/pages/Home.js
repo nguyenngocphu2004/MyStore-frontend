@@ -6,12 +6,20 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showChatbot, setShowChatbot] = useState(false);
 
+  // phân trang
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const perPage = 8; // số sản phẩm mỗi trang
+
   useEffect(() => {
-    fetch("http://localhost:5000/products")
+    fetch(`http://localhost:5000/products?page=${page}&per_page=${perPage}`)
       .then((res) => res.json())
-      .then((data) => setProducts(data))
+      .then((data) => {
+        setProducts(data.products);
+        setPages(data.pages);
+      })
       .catch((err) => console.error("Lỗi khi fetch products:", err));
-  }, []);
+  }, [page]);
 
   const slides = [
     {
@@ -90,12 +98,44 @@ function Home() {
             </div>
           ))}
         </div>
+
+        {/* Pagination */}
+       <div className="d-flex justify-content-center mt-4">
+  <nav>
+    <ul className="pagination">
+      <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+        <button
+          className={`btn btn-sm ${page === 1 ? "btn-secondary" : "btn-warning"} me-2`}
+          onClick={() => setPage(page - 1)}
+        >
+          Trước
+        </button>
+      </li>
+
+      {[...Array(pages)].map((_, idx) => (
+        <li key={idx} className="page-item">
+          <button
+            className={`btn btn-sm ${page === idx + 1 ? "btn-warning" : "btn-outline-warning"} me-2`}
+            onClick={() => setPage(idx + 1)}
+          >
+            {idx + 1}
+          </button>
+        </li>
+      ))}
+
+      <li className={`page-item ${page === pages ? "disabled" : ""}`}>
+        <button
+          className={`btn btn-sm ${page === pages ? "btn-secondary" : "btn-warning"}`}
+          onClick={() => setPage(page + 1)}
+        >
+          Sau
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
       </main>
-
-      {/* Nút mở/tắt Chatbot */}
-
-
-
     </div>
   );
 }

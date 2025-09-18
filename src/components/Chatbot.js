@@ -104,7 +104,7 @@ function Chatbot() {
             width: "60px",
             height: "60px",
             borderRadius: "50%",
-            backgroundColor: "#007bff",
+            backgroundColor: "#facc15",
             color: "white",
             border: "none",
             boxShadow: "0 4px 8px rgba(0,0,0,0.2)",

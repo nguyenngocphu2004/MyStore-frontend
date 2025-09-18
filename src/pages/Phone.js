@@ -19,15 +19,19 @@ function Phone() {
   const [minBattery, setMinBattery] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/products")
-      .then((res) => res.json())
-      .then((data) => {
-        const phones = data.filter((item) => item.category === "Điện thoại");
-        setProducts(phones);
-        setFilteredProducts(phones);
-      })
-      .catch((err) => console.error(err));
-  }, []);
+  fetch("http://localhost:5000/products?page=1&per_page=20")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("API trả về:", data);
+      const phones = data.products.filter(
+        (item) => item.category && item.category.toLowerCase() === "điện thoại"
+      );
+      setProducts(phones);
+      setFilteredProducts(phones);
+    })
+    .catch((err) => console.error(err));
+}, []);
+
 
   useEffect(() => {
     let filtered = [...products];
@@ -84,32 +88,33 @@ function Phone() {
 
       {/* Bộ lọc: nút lọc và thương hiệu */}
       <div className="d-flex align-items-center gap-2 mb-3 overflow-auto">
-        <button
-          className="btn btn-outline-secondary btn-sm"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <i className="bi bi-funnel-fill me-1"></i>Lọc
-        </button>
-         <button
-            className={`btn btn-sm ${
-              selectedBrand === "Tất cả" ? "btn-primary" : "btn-outline-primary"
-            }`}
-            onClick={() => setSelectedBrand("Tất cả")}
-          >
-            Tất cả
-         </button>
-        {brands.map((brand) => (
-          <button
-            key={brand}
-            className={`btn btn-sm ${
-              selectedBrand === brand ? "btn-primary" : "btn-outline-primary"
-            }`}
-            onClick={() => setSelectedBrand(brand)}
-          >
-            {brand}
-          </button>
-        ))}
-      </div>
+  <button
+    className="btn btn-outline-secondary btn-sm"
+    onClick={() => setShowFilters(!showFilters)}
+  >
+    <i className="bi bi-funnel-fill me-1"></i>Lọc
+  </button>
+  <button
+    className={`btn btn-sm ${
+      selectedBrand === "Tất cả" ? "btn-warning" : "btn-outline-dark"
+    }`}
+    onClick={() => setSelectedBrand("Tất cả")}
+  >
+    Tất cả
+  </button>
+  {brands.map((brand) => (
+    <button
+      key={brand}
+      className={`btn btn-sm ${
+        selectedBrand === brand ? "btn-warning" : "btn-outline-dark"
+      }`}
+      onClick={() => setSelectedBrand(brand)}
+    >
+      {brand}
+    </button>
+  ))}
+</div>
+
 
       {/* Bộ lọc mở rộng */}
       {showFilters && (

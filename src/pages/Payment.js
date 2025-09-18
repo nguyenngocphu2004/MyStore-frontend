@@ -39,8 +39,8 @@ function Payment() {
 
       if (res.ok) {
         if (selectedMethod === "COD") {
-          alert("✅ Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
-          navigate("/orders");
+          alert("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+          navigate("/profile");
         } else if (data.payUrl) {
           window.location.href = data.payUrl;
         }

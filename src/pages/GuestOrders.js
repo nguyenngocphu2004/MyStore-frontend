@@ -17,6 +17,11 @@ function GuestOrders() {
   SHIPPING: "Đang giao",
   DELIVERED: "Đã giao",
 };
+ const PAYMENT_TEXT = {
+  PENDING: "Chưa thanh toán",
+  PAID: "Đã thanh toán",
+  FAILED: "Thanh toán thất bại",
+  };
   // Countdown
   useEffect(() => {
     if (countdown > 0) {
@@ -30,7 +35,7 @@ function GuestOrders() {
     setError(""); setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/orders/request-otp", {
+      const res = await fetch("http://localhost:5000/api/request-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
@@ -96,7 +101,7 @@ function GuestOrders() {
           ref={otpInputRef}
         />
         <button
-          className="btn btn-primary"
+          className="btn btn-warning"
           onClick={countdown > 0 ? handleVerifyOtp : handleRequestOtp}
           disabled={loading}
         >
@@ -130,6 +135,7 @@ function GuestOrders() {
                 <p><b>Ngày đặt:</b> {new Date(o.created_at).toLocaleString("vi-VN")}</p>
                 {/* Trạng thái đơn hàng */}
                 <p><b>Trạng thái đơn hàng:</b> {DELIVERY_TEXT[o.delivery_status || "PENDING"]}</p>
+                <p><b>Trạng thái đơn hàng:</b> {PAYMENT_TEXT[o.status || "PENDING"]}</p>
                 <h6>Sản phẩm:</h6>
                 <ul>
                   {o.items.map((it, i) => (

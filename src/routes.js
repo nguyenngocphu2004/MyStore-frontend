@@ -27,6 +27,8 @@ import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import CheckoutCart from "./pages/CheckoutCart";
 import CheckoutCartInfo from "./pages/CheckoutCartInfo";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 function AppRoutes() {
   return (
     <Routes>
@@ -47,6 +49,8 @@ function AppRoutes() {
       <Route path="/checkout-cart" element={<CheckoutCart />} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/checkout-cart-info" element={<CheckoutCartInfo />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
           <AdminLayout />

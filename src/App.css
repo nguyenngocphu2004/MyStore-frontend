@@ -93,7 +93,6 @@
 
 /* Nút gửi */
 .comment-form button {
-  background: #007bff;
   border: none;
   padding: 10px 18px;
   border-radius: 8px;
@@ -102,9 +101,7 @@
   transition: 0.3s;
 }
 
-.comment-form button:hover {
-  background: #0056b3;
-}
+
 @keyframes moveUp {
   0% { transform: translateY(0); opacity: 1; }
   100% { transform: translateY(-20px); opacity: 0; }
@@ -215,7 +212,7 @@
 .carousel-indicators {
   position: absolute;
   bottom: 10px;
-  left: 50%;
+  left: 35%;
   transform: translateX(-50%);
   display: flex;
   gap: 8px;
@@ -268,8 +265,8 @@
 
 /* Header của chatbot */
 .chatbot-header {
-  background-color: #007bff;
-  color: white;
+  background-color: #facc15;
+  color: #222;
   padding: 12px 16px;
   font-weight: 600;
   font-size: 18px;
@@ -313,7 +310,7 @@
 
 /* Tin nhắn bot căn trái */
 .message.bot {
-  background-color: #ffffff;
+  background-color: #facc15;
   border: 1px solid #ccc;
   align-self: flex-start;
   border-bottom-left-radius: 0;
@@ -322,8 +319,8 @@
 
 /* Tin nhắn user căn phải */
 .message.user {
-  background-color: #007bff;
-  color: white;
+  background-color: #facc15;
+  color: #222;
   align-self: flex-end;
   border-bottom-right-radius: 0;
 }
@@ -363,7 +360,7 @@
 }
 
 .chatbot-input button {
-  background-color: #007bff;
+  background-color: #facc15;
   border: none;
   color: white;
   padding: 0 16px;
@@ -375,7 +372,7 @@
 }
 
 .chatbot-input button:hover {
-  background-color: #0056b3;
+  background-color: #facc15;
 }
 
 
@@ -389,8 +386,8 @@
 }
 
 .quick-reply-btn {
-  background-color: #0066ff;
-  color: white;
+  background-color: #facc15 ;
+  color: #222;
   border: none;
   padding: 8px 18px;
   border-radius: 50px;
@@ -402,12 +399,12 @@
 }
 
 .quick-reply-btn:disabled {
-  background-color: #99bbff;
+  background-color: #facc15;
   cursor: default;
 }
 
 .quick-reply-btn:hover:not(:disabled) {
-  background-color: #004ecc;
+  background-color: #facc15;
 }
 
 input:focus,
@@ -418,4 +415,33 @@ select:focus {
   border-color: #ced4da !important; /* hoặc giữ màu border mặc định */
 }
 
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 3000;
+}
+
+.toast-box {
+  background: #fff;
+  color: #000;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  border: 2px solid #ffc107; /* viền vàng */
+  margin-bottom: 10px;
+  min-width: 250px;
+  max-width: 350px;
+  font-size: 15px;
+  animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
+}
 
