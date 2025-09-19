@@ -1,6 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+function ConfirmModal({ show, message, onConfirm, onCancel }) {
+  if (!show) return null;
+
+  return (
+    <div
+      className="modal fade show d-block"
+      tabIndex="-1"
+      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content rounded-4 shadow-lg">
+          <div className="modal-header">
+            <h5 className="modal-title btn">Xác nhận</h5>
+            <button type="button" className="btn-close" onClick={onCancel}></button>
+          </div>
+          <div className="modal-body">
+            <p>{message}</p>
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-secondary" onClick={onCancel}>
+              Hủy
+            </button>
+            <button className="btn btn-warning" onClick={onConfirm}>
+              Đồng ý
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Payment() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -9,6 +41,12 @@ function Payment() {
   const [order, setOrder] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState("");
 
+  // State modal xác nhận COD
+  const [showConfirmCOD, setShowConfirmCOD] = useState(false);
+
+  // State thông báo (thay alert)
+  const [notification, setNotification] = useState(null);
+
   useEffect(() => {
     fetch(`http://localhost:5000/orders/${orderId}`)
       .then((res) => res.json())
@@ -16,11 +54,12 @@ function Payment() {
       .catch(() => setOrder(null));
   }, [orderId]);
 
-  const handlePay = async () => {
-    if (!selectedMethod) {
-      setError("⚠️ Vui lòng chọn phương thức thanh toán");
-      return;
-    }
+  const showNotification = (msg) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const processPayment = async () => {
     setLoading(true);
     setError("");
 
@@ -39,7 +78,7 @@ function Payment() {
 
       if (res.ok) {
         if (selectedMethod === "COD") {
-          alert("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+          showNotification("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
           navigate("/profile");
         } else if (data.payUrl) {
           window.location.href = data.payUrl;
@@ -53,6 +92,25 @@ function Payment() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePay = () => {
+    if (!selectedMethod) {
+      setError("⚠️ Vui lòng chọn phương thức thanh toán");
+      return;
+    }
+
+    if (selectedMethod === "COD") {
+      // Hiển thị modal xác nhận trước khi thanh toán COD
+      setShowConfirmCOD(true);
+    } else {
+      processPayment();
+    }
+  };
+
+  const handleConfirmCOD = () => {
+    setShowConfirmCOD(false);
+    processPayment();
   };
 
   const paymentOptions = [
@@ -75,8 +133,16 @@ function Payment() {
 
   return (
     <div className="container my-5 d-flex justify-content-center">
+      {notification && (
+        <div
+          className="alert alert-warning position-fixed top-0 end-0 m-3 shadow"
+          style={{ zIndex: 1055 }}
+        >
+          {notification}
+        </div>
+      )}
+
       <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
-        {/* Header màu vàng */}
         <div
           className="card-header bg-warning text-center"
           style={{ backgroundColor: "#ffba00", color: "#000" }}
@@ -119,7 +185,6 @@ function Payment() {
 
               {error && <div className="alert alert-danger text-center">{error}</div>}
 
-              {/* Button màu vàng */}
               <button
                 className="w-100 py-2 fs-5"
                 style={{
@@ -139,6 +204,14 @@ function Payment() {
           )}
         </div>
       </div>
+
+      {/* Modal xác nhận COD */}
+      <ConfirmModal
+        show={showConfirmCOD}
+        message="Bạn chắc chắn muốn thanh toán khi nhận hàng (COD)?"
+        onConfirm={handleConfirmCOD}
+        onCancel={() => setShowConfirmCOD(false)}
+      />
     </div>
   );
 }

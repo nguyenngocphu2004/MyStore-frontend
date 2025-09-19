@@ -36,7 +36,7 @@ function CheckoutCart() {
 
   const handlePay = async () => {
     if (!selectedMethod) {
-      setError("⚠️ Vui lòng chọn phương thức thanh toán");
+      setError("Vui lòng chọn phương thức thanh toán");
       return;
     }
     setLoading(true);

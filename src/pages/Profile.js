@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ConfirmModal from "../components/ConfirmModal";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
@@ -11,9 +12,31 @@ function Profile() {
   const [successMsg, setSuccessMsg] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
+  const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const [confirmData, setConfirmData] = useState({
+  show: false,
+  message: "",
+  onConfirm: null,
+  onCancel: null,
+});
+const openConfirm = (message, onConfirm) => {
+  setConfirmData({
+    show: true,
+    message,
+    onConfirm: () => {
+      onConfirm();
+      setConfirmData({ ...confirmData, show: false });
+    },
+    onCancel: () => setConfirmData({ ...confirmData, show: false }),
+  });
+};
+
+  const showNotification = (msg) => {
+  setNotification(msg);
+  setTimeout(() => setNotification(null), 3000); // 3 giây ẩn
+};
 
   const DELIVERY_TEXT = {
     PENDING: "Chờ xác nhận",
@@ -26,6 +49,7 @@ function Profile() {
     PENDING: "Chưa thanh toán",
     PAID: "Đã thanh toán",
     FAILED: "Thanh toán thất bại",
+    CANCELED: "Đã hủy",
   };
 
   if (!token) navigate("/login");
@@ -68,8 +92,7 @@ function Profile() {
   };
 
   const handleConfirmReceived = (orderId) => {
-    if (!window.confirm("Bạn chắc chắn đã nhận được hàng?")) return;
-
+  openConfirm("Bạn chắc chắn đã nhận được hàng?", () => {
     fetch(`http://localhost:5000/orders/${orderId}/confirm_received`, {
       method: "PUT",
       headers: {
@@ -81,12 +104,15 @@ function Profile() {
         return res.json();
       })
       .then(() => fetchOrders())
-      .catch(err => alert(err.message));
-  };
+      .catch(err => showNotification(err.message));
+  });
+};
+
 
   useEffect(() => {
     fetchProfile();
     fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
@@ -96,6 +122,26 @@ function Profile() {
     setSuccessMsg(null);
     setError(null);
   };
+ const handleCancelOrder = (orderId) => {
+  openConfirm("Bạn chắc chắn muốn hủy đơn hàng này?", () => {
+    fetch(`http://localhost:5000/orders/${orderId}/cancel`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Hủy đơn hàng thất bại");
+        return res.json();
+      })
+      .then(() => {
+        showNotification("Đã hủy đơn hàng");
+        fetchOrders();
+      })
+      .catch((err) => showNotification(err.message));
+  });
+};
+
 
   const handleCancel = () => {
     setEditing(false);
@@ -150,6 +196,31 @@ function Profile() {
   }
 
   return (
+   <>
+   <ConfirmModal
+  show={confirmData.show}
+  message={confirmData.message}
+  onConfirm={confirmData.onConfirm}
+  onCancel={confirmData.onCancel}
+/>
+
+      {notification && (
+        <div
+          style={{
+            position: "fixed",
+            top: 20,
+            right: 20,
+            backgroundColor: "#facc15",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "5px",
+            boxShadow: "0 0 10px rgba(0,0,0,0.3)",
+            zIndex: 9999,
+          }}
+        >
+          {notification}
+        </div>
+      )}
     <div className="container my-5">
       <div className="row">
         {/* Hồ sơ */}
@@ -240,16 +311,23 @@ function Profile() {
   {orders.map((order) => (
     <li key={order.id} className="list-group-item position-relative" style={{ minHeight: "140px" }}>
       <div>
-        <div><strong>Mã đơn:</strong> #{order.id}</div>
+        <div><strong>Mã đơn:</strong> {`#${order.order_code}` || `#${order.id}`}</div>
         <div><strong>Ngày đặt:</strong> {new Date(order.created_at).toLocaleString()}</div>
         <div><strong>Tổng tiền:</strong> {order.total_price?.toLocaleString()} VND</div>
-        <div><strong>Trạng thái thanh toán:</strong> {STATUS_TEXT[order.status]}</div>
+        <div><strong>Trạng thái:</strong> {STATUS_TEXT[order.status]}</div>
         <div><strong>Trạng thái giao hàng:</strong> {DELIVERY_TEXT[order.delivery_status]}</div>
       </div>
 
       {/* Nút nằm góc phải dưới cùng */}
       <div className="position-absolute bottom-0 end-0 p-2 d-flex gap-2">
-
+        {order.status === "PENDING" && (
+        <button
+          className="btn btn-sm btn-danger"
+          onClick={() => handleCancelOrder(order.id)}
+        >
+          Hủy đơn hàng
+        </button>
+      )}
 
         {order.delivery_status === "SHIPPING" && (
           <button
@@ -260,7 +338,7 @@ function Profile() {
           </button>
         )}
         <button
-          className="btn btn-sm btn-primary"
+          className="btn bg-success text-white"
           onClick={() => fetchOrderDetail(order.id)}
         >
           Xem chi tiết
@@ -285,10 +363,11 @@ function Profile() {
         >
           <div className="modal-dialog modal-lg modal-dialog-centered animate-modal">
             <div className="modal-content shadow-lg rounded-4 border-0">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  <i className="bi bi-receipt"></i> Chi tiết đơn hàng #{selectedOrder.id}
-                </h5>
+              <div className="modal-header bg-success text-white">
+               <h5 className="modal-title">
+  <i className="bi bi-receipt"></i> Chi tiết đơn hàng {`#${selectedOrder.order_code}` || `#${selectedOrder.id}`}
+</h5>
+
                 <button
                   type="button"
                   className="btn-close btn-close-white"
@@ -297,12 +376,22 @@ function Profile() {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <h6 className="text-secondary">Thông tin đơn hàng</h6>
+                  <h6 className="list-unstyled">Thông tin đơn hàng</h6>
                   <ul className="list-unstyled mb-0">
                     <li><strong>Người đặt:</strong> {selectedOrder.user?.username || selectedOrder.guest_name}</li>
                     <li><strong>SĐT:</strong> {selectedOrder.user?.phone || selectedOrder.guest_phone}</li>
                     <li><strong>Địa chỉ:</strong> {selectedOrder.address}</li>
                     <li><strong>Ngày đặt:</strong> {selectedOrder.created_at}</li>
+                    <li>
+                      <strong>Phương thức thanh toán:</strong>{" "}
+                      {selectedOrder.payment_method === "COD" && <span>Thanh toán khi nhận hàng</span>}
+                      {selectedOrder.payment_method === "ZALO" && <span>Thanh toán bằng ZALOPAY</span>}
+                      {selectedOrder.payment_method === "MOMO" && <span>Thanh toán bằng MoMo</span>}
+                    </li>
+                    <li>
+  <strong>Nhận hàng tại:</strong>{" "}
+  {selectedOrder.delivery_method === "store" ? "Nhận tại cửa hàng" : "Giao hàng tận nhà"}
+</li>
                     <li><strong>Tổng tiền:</strong> <span className="text-danger fw-bold">{selectedOrder.total_price?.toLocaleString()} VND</span></li>
                   </ul>
                 </div>
@@ -345,6 +434,7 @@ function Profile() {
         </div>
       )}
     </div>
+     </>
   );
 }
 

@@ -105,8 +105,8 @@ function Header() {
           <nav className="d-none d-md-flex gap-3 fw-medium me-4">
             <Link to="/phones" className="text-dark text-decoration-none">Điện thoại</Link>
             <Link to="/laptops" className="text-dark text-decoration-none">Laptop</Link>
-            <Link to="/smartwatch" className="text-dark text-decoration-none">Smartwatch</Link>
-            <Link to="/Tablet" className="text-dark text-decoration-none">Tablet</Link>
+            <Link to="/contact" className="text-dark text-decoration-none">Liên hệ</Link>
+            <Link to="/about_us" className="text-dark text-decoration-none">Về chúng tôi</Link>
           </nav>
 
           {/* Search + Icons */}

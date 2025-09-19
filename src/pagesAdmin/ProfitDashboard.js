@@ -146,7 +146,7 @@ export default function ProfitDashboard() {
       {/* Theo brand */}
       {activeTab === "brand" && (
         <div>
-          <h5>Doanh thu - Chi phí - Lợi nhuận theo brand</h5>
+          <h5>Doanh thu - Chi phí - Lợi nhuận theo thương hiệu</h5>
           {(() => {
 
             return
@@ -165,7 +165,7 @@ export default function ProfitDashboard() {
       {/* Theo category */}
       {activeTab === "category" && (
         <div>
-          <h5>Doanh thu - Chi phí - Lợi nhuận theo category</h5>
+          <h5>Doanh thu - Chi phí - Lợi nhuận theo danh mục</h5>
           {(() => {
 
             return

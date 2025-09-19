@@ -337,7 +337,7 @@ function ProductDetail() {
 
           {/* Bình luận */}
           <div className="mt-4">
-            <h3>Đánh giá trung bình</h3>
+            <h3>Đánh giá sản phẩm</h3>
             <div className="d-flex align-items-center mb-2">
               {[1, 2, 3, 4, 5].map((star) => {
                 if (averageRating >= star) {

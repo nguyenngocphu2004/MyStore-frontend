@@ -7,8 +7,8 @@ function Checkout() {
 
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState({ name: "", phone: "", email: "" });
+  const [ ,setIsLoggedIn] = useState(false);
+  const [,setUserInfo] = useState({ name: "", phone: "", email: "" });
   const [checkoutInfo, setCheckoutInfo] = useState({ name: "", phone: "", email: "" });
   const [deliveryMethod, setDeliveryMethod] = useState("store"); // store | home
   const [address, setAddress] = useState("");
@@ -234,7 +234,7 @@ function Checkout() {
 
             {error && <p className="text-danger">{error}</p>}
 
-            <button type="submit" className="btn btn-primary w-100">
+            <button type="submit" className="btn btn-warning w-100">
               Đặt hàng
             </button>
           </form>

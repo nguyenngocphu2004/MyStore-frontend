@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
 
-const brands = ["Apple", "Samsung", "Xiaomi", "Oppo", "Realme"];
 const rams = ["4GB", "6GB", "8GB", "12GB"];
 const cpus = ["Snapdragon", "MediaTek", "Apple", "Exynos"];
 
 function Phone() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("Tất cả");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -18,109 +18,93 @@ function Phone() {
   const [selectedCpu, setSelectedCpu] = useState("");
   const [minBattery, setMinBattery] = useState("");
 
+  // Phân trang
+  const [page, setPage] = useState(1);
+  const perPage = 8;
+
+  // Lấy products từ API
   useEffect(() => {
-  fetch("http://localhost:5000/products?page=1&per_page=20")
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("API trả về:", data);
-      const phones = data.products.filter(
-        (item) => item.category && item.category.toLowerCase() === "điện thoại"
-      );
-      setProducts(phones);
-      setFilteredProducts(phones);
-    })
-    .catch((err) => console.error(err));
-}, []);
+    fetch("http://localhost:5000/products?page=1&per_page=50")
+      .then((res) => res.json())
+      .then((data) => {
+        const phones = data.products.filter(
+          (item) => item.category && item.category.toLowerCase() === "điện thoại"
+        );
+        setProducts(phones);
+        setFilteredProducts(phones);
 
+        // Lọc ra những brand có điện thoại
+        const phoneBrands = [...new Set(phones.map((p) => p.brand))];
+        setBrands(phoneBrands);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
+  // Lọc sản phẩm
   useEffect(() => {
     let filtered = [...products];
 
-    // Thương hiệu
     if (selectedBrand !== "Tất cả") {
       filtered = filtered.filter(
         (p) => p.brand.toLowerCase() === selectedBrand.toLowerCase()
       );
     }
-
-    // Giá
     if (priceRange) {
       const [min, max] = priceRange.split("-").map(Number);
       filtered = filtered.filter((p) => p.price >= min && p.price <= max);
     }
-
-    // Còn hàng
-    if (stockOnly) {
-      filtered = filtered.filter((p) => p.inStock === true);
-    }
-
-    // RAM
-    if (selectedRam) {
-      filtered = filtered.filter((p) => p.ram === selectedRam);
-    }
-
-    // CPU
-    if (selectedCpu) {
+    if (stockOnly) filtered = filtered.filter((p) => p.inStock === true);
+    if (selectedRam) filtered = filtered.filter((p) => p.ram === selectedRam);
+    if (selectedCpu)
       filtered = filtered.filter((p) =>
         p.cpu.toLowerCase().includes(selectedCpu.toLowerCase())
       );
-    }
-
-    // Dung lượng pin
-    if (minBattery) {
+    if (minBattery)
       filtered = filtered.filter((p) => p.battery >= parseInt(minBattery));
-    }
 
     setFilteredProducts(filtered);
-  }, [
-    selectedBrand,
-    priceRange,
-    stockOnly,
-    selectedRam,
-    selectedCpu,
-    minBattery,
-    products
-  ]);
+    setPage(1); // reset page khi filter
+  }, [selectedBrand, priceRange, stockOnly, selectedRam, selectedCpu, minBattery, products]);
+
+  // Phân trang
+  const totalPages = Math.ceil(filteredProducts.length / perPage);
+  const indexOfLast = page * perPage;
+  const indexOfFirst = indexOfLast - perPage;
+  const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
 
   return (
     <div className="container my-5">
       <h2 className="fw-bold mb-4">Điện thoại nổi bật</h2>
 
-      {/* Bộ lọc: nút lọc và thương hiệu */}
+      {/* Filter brand */}
       <div className="d-flex align-items-center gap-2 mb-3 overflow-auto">
-  <button
-    className="btn btn-outline-secondary btn-sm"
-    onClick={() => setShowFilters(!showFilters)}
-  >
-    <i className="bi bi-funnel-fill me-1"></i>Lọc
-  </button>
-  <button
-    className={`btn btn-sm ${
-      selectedBrand === "Tất cả" ? "btn-warning" : "btn-outline-dark"
-    }`}
-    onClick={() => setSelectedBrand("Tất cả")}
-  >
-    Tất cả
-  </button>
-  {brands.map((brand) => (
-    <button
-      key={brand}
-      className={`btn btn-sm ${
-        selectedBrand === brand ? "btn-warning" : "btn-outline-dark"
-      }`}
-      onClick={() => setSelectedBrand(brand)}
-    >
-      {brand}
-    </button>
-  ))}
-</div>
+        <button
+          className={`btn btn-sm ${selectedBrand === "Tất cả" ? "btn-warning" : "btn-outline-dark"}`}
+          onClick={() => setSelectedBrand("Tất cả")}
+        >
+          Tất cả
+        </button>
+        {brands.map((brand) => (
+          <button
+            key={brand}
+            className={`btn btn-sm ${selectedBrand === brand ? "btn-warning" : "btn-outline-dark"}`}
+            onClick={() => setSelectedBrand(brand)}
+          >
+            {brand}
+          </button>
+        ))}
+        <button
+          className="btn btn-outline-secondary btn-sm"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <i className="bi bi-funnel-fill me-1"></i>Lọc nâng cao
+        </button>
+      </div>
 
-
-      {/* Bộ lọc mở rộng */}
+      {/* Bộ lọc nâng cao */}
       {showFilters && (
         <div className="border rounded p-3 mb-4 bg-light">
           <div className="row g-3">
-            {/* Giá */}
             <div className="col-md-4">
               <label className="form-label">Khoảng giá</label>
               <select
@@ -136,7 +120,6 @@ function Phone() {
               </select>
             </div>
 
-            {/* Còn hàng */}
             <div className="col-md-4 d-flex align-items-end">
               <div className="form-check">
                 <input
@@ -152,7 +135,6 @@ function Phone() {
               </div>
             </div>
 
-            {/* RAM */}
             <div className="col-md-4">
               <label className="form-label">RAM</label>
               <select
@@ -169,7 +151,6 @@ function Phone() {
               </select>
             </div>
 
-            {/* CPU */}
             <div className="col-md-4">
               <label className="form-label">CPU</label>
               <select
@@ -186,9 +167,8 @@ function Phone() {
               </select>
             </div>
 
-            {/* Pin */}
             <div className="col-md-4">
-              <label  className="form-label">Dung lượng pin tối thiểu (mAh)</label>
+              <label className="form-label">Pin tối thiểu (mAh)</label>
               <input
                 step="500"
                 type="number"
@@ -199,27 +179,64 @@ function Phone() {
               />
             </div>
           </div>
-          {/* Nút Đóng */}
-            <div className="d-flex justify-content-end mt-3">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowFilters(false)}
-              >
-                Đóng
-              </button>
-            </div>
+          <div className="d-flex justify-content-end mt-3">
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => setShowFilters(false)}
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       )}
 
       {/* Danh sách sản phẩm */}
       <div className="row g-4">
-        {filteredProducts.map((p) => (
+        {currentProducts.map((p) => (
           <div key={p.id} className="col-6 col-md-3">
             <ProductCard product={p} />
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center mt-4">
+          <nav>
+            <ul className="pagination">
+              <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+                <button
+                  className={`btn btn-sm ${page === 1 ? "btn-secondary" : "btn-warning"} me-2`}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Trước
+                </button>
+              </li>
+
+              {[...Array(totalPages)].map((_, idx) => (
+                <li key={idx} className="page-item">
+                  <button
+                    className={`btn btn-sm ${page === idx + 1 ? "btn-warning" : "btn-outline-warning"} me-2`}
+                    onClick={() => setPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                </li>
+              ))}
+
+              <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
+                <button
+                  className={`btn btn-sm ${page === totalPages ? "btn-secondary" : "btn-warning"}`}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Sau
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
     </div>
   );
 }

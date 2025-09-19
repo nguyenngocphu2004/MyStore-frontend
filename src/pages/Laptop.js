@@ -18,6 +18,10 @@ function Laptop() {
   const [selectedScreen, setSelectedScreen] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
 
+  // Phân trang
+  const [page, setPage] = useState(1);
+  const perPage = 8;
+
   // Lấy sản phẩm laptop
   useEffect(() => {
     fetch("http://localhost:5000/products?page=1&per_page=50")
@@ -28,22 +32,15 @@ function Laptop() {
         );
         setProducts(laptops);
         setFilteredProducts(laptops);
+
+        // Lọc ra những brand có laptop
+        const laptopBrands = [...new Set(laptops.map((p) => p.brand))];
+        setBrands(laptopBrands);
       })
       .catch((err) => console.error(err));
   }, []);
 
-  // Lấy brand từ backend
-  useEffect(() => {
-    fetch("http://localhost:5000/brands")
-      .then((res) => res.json())
-      .then((data) => {
-        const brandNames = data.map((b) => b.name);
-        setBrands(brandNames);
-      })
-      .catch((err) => console.error(err));
-  }, []);
-
-  // Lọc dữ liệu khi chọn filter
+  // Lọc sản phẩm khi filter thay đổi
   useEffect(() => {
     let filtered = [...products];
 
@@ -63,18 +60,23 @@ function Laptop() {
     }
 
     setFilteredProducts(filtered);
+    setPage(1); // reset về trang 1 khi filter
   }, [selectedBrand, selectedScreen, selectedPrice, products]);
+
+  // Tính phân trang
+  const totalPages = Math.ceil(filteredProducts.length / perPage);
+  const indexOfLast = page * perPage;
+  const indexOfFirst = indexOfLast - perPage;
+  const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
 
   return (
     <div className="container my-5">
       <h2 className="fw-bold mb-4">Laptop</h2>
 
-      {/* Filter buttons */}
+      {/* Filter brand */}
       <div className="d-flex align-items-center gap-2 mb-3 overflow-auto">
         <button
-          className={`btn btn-sm ${
-            selectedBrand === "Tất cả" ? "btn-warning" : "btn-outline-dark"
-          }`}
+          className={`btn btn-sm ${selectedBrand === "Tất cả" ? "btn-warning" : "btn-outline-dark"}`}
           onClick={() => setSelectedBrand("Tất cả")}
         >
           Tất cả
@@ -82,9 +84,7 @@ function Laptop() {
         {brands.map((brand) => (
           <button
             key={brand}
-            className={`btn btn-sm ${
-              selectedBrand === brand ? "btn-warning" : "btn-outline-dark"
-            }`}
+            className={`btn btn-sm ${selectedBrand === brand ? "btn-warning" : "btn-outline-dark"}`}
             onClick={() => setSelectedBrand(brand)}
           >
             {brand}
@@ -128,12 +128,50 @@ function Laptop() {
 
       {/* Product List */}
       <div className="row g-4">
-        {filteredProducts.map((p) => (
+        {currentProducts.map((p) => (
           <div key={p.id} className="col-6 col-md-3">
             <ProductCard product={p} />
           </div>
         ))}
       </div>
+
+      {/* Pagination giống Home */}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center mt-4">
+          <nav>
+            <ul className="pagination">
+              <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+                <button
+                  className={`btn btn-sm ${page === 1 ? "btn-secondary" : "btn-warning"} me-2`}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Trước
+                </button>
+              </li>
+
+              {[...Array(totalPages)].map((_, idx) => (
+                <li key={idx} className="page-item">
+                  <button
+                    className={`btn btn-sm ${page === idx + 1 ? "btn-warning" : "btn-outline-warning"} me-2`}
+                    onClick={() => setPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                </li>
+              ))}
+
+              <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
+                <button
+                  className={`btn btn-sm ${page === totalPages ? "btn-secondary" : "btn-warning"}`}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Sau
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
     </div>
   );
 }

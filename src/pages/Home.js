@@ -4,12 +4,11 @@ import ProductCard from "../components/ProductCard";
 function Home() {
   const [products, setProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [showChatbot, setShowChatbot] = useState(false);
 
   // phân trang
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  const perPage = 8; // số sản phẩm mỗi trang
+  const perPage = 16; // số sản phẩm mỗi trang
 
   useEffect(() => {
     fetch(`http://localhost:5000/products?page=${page}&per_page=${perPage}`)

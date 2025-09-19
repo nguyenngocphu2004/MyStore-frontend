@@ -53,7 +53,7 @@ function Footer() {
           {/* Liên hệ + mạng xã hội */}
           <div className="col-md-4 mb-4">
             <h6 className="fw-bold mb-3" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>Liên hệ</h6>
-            <p className="small mb-2 text-white-50" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.3)" }}>📍 123 Nguyễn Trãi, Hà Nội</p>
+            <p className="small mb-2 text-white-50" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.3)" }}>📍 35c đường 109, Phước Long B</p>
             <p className="small mb-2 text-white-50" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.3)" }}>📞 0123 456 789</p>
             <p className="small mb-2 text-white-50" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.3)" }}>✉️ support@phustore.com</p>
 
