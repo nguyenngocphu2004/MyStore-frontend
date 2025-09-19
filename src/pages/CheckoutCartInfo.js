@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 function CheckoutCartInfo() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const selectedProducts = location.state?.selectedProducts || [];
+
   const [info, setInfo] = useState({
     name: "",
     phone: "",
@@ -50,8 +53,14 @@ function CheckoutCartInfo() {
       return;
     }
 
-    // Lưu thông tin nhận hàng để trang thanh toán dùng
+    if (selectedProducts.length === 0) {
+      setError("Chưa có sản phẩm nào được chọn để đặt hàng");
+      return;
+    }
+
+    // Lưu thông tin nhận hàng và sản phẩm đã chọn để trang thanh toán dùng
     localStorage.setItem("checkoutInfo", JSON.stringify(info));
+    localStorage.setItem("selectedProducts", JSON.stringify(selectedProducts));
 
     // Chuyển sang trang thanh toán
     navigate("/checkout-cart");
@@ -61,6 +70,7 @@ function CheckoutCartInfo() {
     <div className="container py-5" style={{ maxWidth: "500px" }}>
       <h3>Thông tin nhận hàng</h3>
       <form onSubmit={handleSubmit}>
+        {/* Form nhập thông tin */}
         <div className="mb-3">
           <label>Họ tên:</label>
           <input
@@ -96,9 +106,7 @@ function CheckoutCartInfo() {
                 type="radio"
                 className="form-check-input"
                 checked={info.deliveryMethod === "store"}
-                onChange={() =>
-                  setInfo({ ...info, deliveryMethod: "store" })
-                }
+                onChange={() => setInfo({ ...info, deliveryMethod: "store" })}
               />
               <label className="form-check-label">Lấy tại cửa hàng</label>
             </div>
@@ -107,9 +115,7 @@ function CheckoutCartInfo() {
                 type="radio"
                 className="form-check-input"
                 checked={info.deliveryMethod === "home"}
-                onChange={() =>
-                  setInfo({ ...info, deliveryMethod: "home" })
-                }
+                onChange={() => setInfo({ ...info, deliveryMethod: "home" })}
               />
               <label className="form-check-label">Giao tận nhà</label>
             </div>
@@ -131,6 +137,21 @@ function CheckoutCartInfo() {
           Xác nhận
         </button>
       </form>
+
+      {/* Hiển thị danh sách sản phẩm đã chọn */}
+      {selectedProducts.length > 0 && (
+        <>
+          <h4 className="mt-4">Sản phẩm đã chọn:</h4>
+          <ul className="list-group">
+            {selectedProducts.map((item) => (
+              <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
+                {item.name} - {item.quantity} x {item.unit_price.toLocaleString("vi-VN")}₫
+                <span>{(item.quantity * item.unit_price).toLocaleString("vi-VN")}₫</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

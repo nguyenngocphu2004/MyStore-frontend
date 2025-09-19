@@ -8,7 +8,7 @@ function Chatbot() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isChatWithAdmin, setIsChatWithAdmin] = useState(false); // NEW: xác định đang chat admin
+  const [isChatWithAdmin, setIsChatWithAdmin] = useState(false);
   const chatRef = useRef(null);
 
   const quickReplies = ["Gặp quản trị viên", "Hỗ trợ kỹ thuật"];
@@ -16,13 +16,17 @@ function Chatbot() {
   // Kết nối socket khi cần
   const connectToSocket = () => {
     if (!socket) {
-      socket = io("http://localhost:5000"); // Địa chỉ backend Flask
+      socket = io("http://localhost:5000");
+
       socket.on("connect", () => {
         console.log("Connected to socket server");
+
+        if (isChatWithAdmin) {
+          socket.emit("client-join-admin-chat");
+        }
       });
 
-      // Nhận phản hồi từ admin
-      socket.on("admin-message", (text) => {
+      socket.on("client-message", ({ text }) => {
         setMessages((prev) => [...prev, { sender: "bot", text }]);
       });
 
@@ -39,21 +43,41 @@ function Chatbot() {
     const userMessage = { sender: "user", text: msgText };
     setMessages((prev) => [...prev, userMessage]);
 
-    // Nếu là "Gặp quản trị viên" → bật socket
     if (msgText === "Gặp quản trị viên") {
       setIsChatWithAdmin(true);
-      connectToSocket(); // kết nối socket
-      socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
+      setMessages((prev) => [...prev, { sender: "bot", text: "PhuStore xin chào! Đợi ít phút có nhân viên hỗ trợ bạn nha" }]);
+      if (!socket) {
+        connectToSocket();
+        socket.once("connect", () => {
+          socket.emit("client-join-admin-chat");
+          socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
+        });
+      } else if (socket.connected) {
+        socket.emit("client-join-admin-chat");
+        socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
+      } else {
+        socket.once("connect", () => {
+          socket.emit("client-join-admin-chat");
+          socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
+        });
+      }
       return;
     }
 
-    // Nếu đang chat với quản trị viên → gửi qua socket
     if (isChatWithAdmin) {
-      socket.emit("client-message", msgText);
+      if (socket && socket.connected) {
+        socket.emit("client-message", msgText);
+      } else {
+        connectToSocket();
+        socket.once("connect", () => {
+          socket.emit("client-join-admin-chat");
+          socket.emit("client-message", msgText);
+        });
+      }
       return;
     }
 
-    // Ngược lại gửi API như cũ
+    // Xử lý bot trả lời khi không chat admin (gọi API backend)
     setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/chatbot", {
@@ -61,7 +85,6 @@ function Chatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msgText }),
       });
-
       const data = await res.json();
       const botMessage = {
         sender: "bot",
@@ -93,7 +116,6 @@ function Chatbot() {
 
   return (
     <>
-      {/* Nút mở chatbot */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -118,7 +140,6 @@ function Chatbot() {
         </button>
       )}
 
-      {/* Giao diện chatbot */}
       {isOpen && (
         <div className="chatbot-container">
           <div className="chatbot-header">
@@ -141,7 +162,6 @@ function Chatbot() {
             )}
           </div>
 
-          {/* Nút chọn tin nhắn mẫu */}
           <div className="quick-replies">
             {quickReplies.map((text, i) => (
               <button

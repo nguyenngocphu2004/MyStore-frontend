@@ -7,10 +7,10 @@ function Cart() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  // Lấy giỏ hàng từ API
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -29,7 +29,6 @@ function Cart() {
     else setLoading(false);
   }, [token]);
 
-  // Cập nhật số lượng
   const updateQuantity = async (itemId, delta) => {
     const item = cart.find((i) => i.id === itemId);
     if (!item) return;
@@ -60,13 +59,11 @@ function Cart() {
     }
   };
 
-  // Khi nhấn nút Xóa → mở modal
   const handleDeleteClick = (item) => {
     setItemToDelete(item);
     setShowModal(true);
   };
 
-  // Xác nhận xóa sản phẩm
   const confirmDelete = async () => {
     if (!itemToDelete) return;
 
@@ -80,6 +77,9 @@ function Cart() {
       setCart((prevCart) =>
         prevCart.filter((i) => i.id !== itemToDelete.id)
       );
+      setSelectedItems((prevSelected) =>
+        prevSelected.filter((id) => id !== itemToDelete.id)
+      );
       window.dispatchEvent(
         new CustomEvent("cartUpdated", { detail: -itemToDelete.quantity })
       );
@@ -91,11 +91,40 @@ function Cart() {
     }
   };
 
-  const handleCheckout = () => {
-    navigate("/checkout-cart-info"); // chuyển qua route Checkout
+  const toggleSelectItem = (itemId) => {
+    setSelectedItems((prevSelected) =>
+      prevSelected.includes(itemId)
+        ? prevSelected.filter((id) => id !== itemId)
+        : [...prevSelected, itemId]
+    );
   };
 
-  const totalPrice = cart.reduce((sum, item) => sum + item.total_price, 0);
+  const isAllSelected = cart.length > 0 && selectedItems.length === cart.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cart.map((item) => item.id));
+    }
+  };
+
+  const handleCheckout = () => {
+    const selectedProducts = cart.filter((item) =>
+      selectedItems.includes(item.id)
+    );
+
+    if (selectedProducts.length === 0) {
+      alert("Vui lòng chọn ít nhất một sản phẩm để đặt hàng.");
+      return;
+    }
+
+    navigate("/checkout-cart-info", { state: { selectedProducts } });
+  };
+
+  const totalPrice = cart
+    .filter((item) => selectedItems.includes(item.id))
+    .reduce((sum, item) => sum + item.total_price, 0);
 
   if (loading)
     return <div className="container py-4">Đang tải giỏ hàng...</div>;
@@ -110,6 +139,13 @@ function Cart() {
           <table className="table table-bordered">
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>Hình ảnh</th>
                 <th>Sản phẩm</th>
                 <th>Giá</th>
@@ -122,10 +158,16 @@ function Cart() {
               {cart.map((item) => (
                 <tr key={item.id}>
                   <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.id)}
+                      onChange={() => toggleSelectItem(item.id)}
+                    />
+                  </td>
+                  <td>
                     <img
                       src={
-                        item.images?.[0] ||
-                        "https://via.placeholder.com/300"
+                        item.images?.[0] || "https://via.placeholder.com/300"
                       }
                       alt={item.name}
                       className="card-img-top"
@@ -134,14 +176,13 @@ function Cart() {
                         height: "50px",
                         objectFit: "contain",
                         backgroundColor: "#fff",
+                        cursor: "pointer",
                       }}
                       onClick={() => navigate(`/product/${item.product_id}`)}
                     />
                   </td>
                   <td>{item.name}</td>
-                  <td>
-                    {Number(item.unit_price).toLocaleString("vi-VN")}₫
-                  </td>
+                  <td>{Number(item.unit_price).toLocaleString("vi-VN")}₫</td>
                   <td>
                     <div className="d-flex gap-2 align-items-center">
                       <button
@@ -160,10 +201,7 @@ function Cart() {
                     </div>
                   </td>
                   <td>
-                    {(item.unit_price * item.quantity).toLocaleString(
-                      "vi-VN"
-                    )}
-                    ₫
+                    {(item.unit_price * item.quantity).toLocaleString("vi-VN")}₫
                   </td>
                   <td>
                     <button
@@ -185,14 +223,18 @@ function Cart() {
             </span>
           </h4>
           <div className="text-end">
-            <button className="btn btn-success" onClick={handleCheckout}>
+            <button
+              className="btn btn-success"
+              onClick={handleCheckout}
+              disabled={selectedItems.length === 0}
+            >
               Đặt hàng
             </button>
           </div>
         </>
       )}
 
-      {/* Modal xác nhận xóa với fade */}
+      {/* Modal xác nhận xóa */}
       {showModal && (
         <div
           className="modal fade show d-block"
@@ -211,8 +253,8 @@ function Cart() {
               </div>
               <div className="modal-body">
                 <p>
-                  Bạn có chắc muốn xóa sản phẩm "{itemToDelete?.name}" khỏi
-                  giỏ hàng?
+                  Bạn có chắc muốn xóa sản phẩm "{itemToDelete?.name}" khỏi giỏ
+                  hàng?
                 </p>
               </div>
               <div className="modal-footer">
@@ -235,3 +277,5 @@ function Cart() {
 }
 
 export default Cart;
+
+

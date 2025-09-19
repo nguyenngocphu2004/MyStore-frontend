@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Phone from "./pages/Phone";
 import Laptop from "./pages/Laptop";
-import Accessories from "./pages/Accessories";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Search from "./pages/Search";
@@ -28,6 +27,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import CheckoutCart from "./pages/CheckoutCart";
 import CheckoutCartInfo from "./pages/CheckoutCartInfo";
 import ForgotPassword from "./pages/ForgotPassword";
+import AdminChat from "./pagesAdmin/AdminChat";
 
 function AppRoutes() {
   return (
@@ -35,7 +35,6 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/phones" element={<Phone />} />
       <Route path="/laptops" element={<Laptop />} />
-      <Route path="/accessories" element={<Accessories />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/search" element={<Search />} />
@@ -50,7 +49,6 @@ function AppRoutes() {
       <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/checkout-cart-info" element={<CheckoutCartInfo />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
           <AdminLayout />
@@ -65,6 +63,7 @@ function AppRoutes() {
         <Route path="brands" element={<AdminBrands />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="orders/:id" element={<AdminOrderDetail />} />
+        <Route path="adminchat" element={<AdminChat />} />
       </Route>
 
 

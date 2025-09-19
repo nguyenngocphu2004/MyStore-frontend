@@ -320,7 +320,7 @@ const openConfirm = (message, onConfirm) => {
 
       {/* Nút nằm góc phải dưới cùng */}
       <div className="position-absolute bottom-0 end-0 p-2 d-flex gap-2">
-        {order.status === "PENDING" && (
+        {(order.status === "PENDING" || order.status === "PROCESSING") && (
         <button
           className="btn btn-sm btn-danger"
           onClick={() => handleCancelOrder(order.id)}

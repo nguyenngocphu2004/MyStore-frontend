@@ -13,12 +13,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function ProfitDashboard() {
+export default function MonthlyProfitWithExtraCosts() {
   const [profitData, setProfitData] = useState({});
-  const [activeTab, setActiveTab] = useState("overview");
   const token = localStorage.getItem("adminToken");
 
-  // Lấy dữ liệu từ backend
+  // Lưu chi phí bổ sung theo tháng và theo loại (string để bind input)
+  const [extraCostsByMonth, setExtraCostsByMonth] = useState({});
+
   useEffect(() => {
     const fetchProfit = async () => {
       try {
@@ -28,6 +29,15 @@ export default function ProfitDashboard() {
         if (res.ok) {
           const data = await res.json();
           setProfitData(data);
+
+          // Khởi tạo extraCostsByMonth với các tháng có trong dữ liệu
+          if (data.profit_by_month) {
+            const initialCosts = {};
+            data.profit_by_month.forEach(([month]) => {
+              initialCosts[month] = { staff: "", rent: "", living: "", other: "" };
+            });
+            setExtraCostsByMonth(initialCosts);
+          }
         } else {
           console.error("Không lấy được dữ liệu lợi nhuận");
         }
@@ -39,148 +49,119 @@ export default function ProfitDashboard() {
     fetchProfit();
   }, [token]);
 
-  // Hàm tạo dữ liệu cho Bar Chart
-  const createBarData = (labels, revenues, costs, profits) => ({
-    labels: labels || [],
-    datasets: [
-      {
-        label: "Doanh thu",
-        data: revenues || [],
-        backgroundColor: "rgba(54, 162, 235, 0.6)"
-      },
-      {
-        label: "Chi phí",
-        data: costs || [],
-        backgroundColor: "rgba(255, 99, 132, 0.6)"
-      },
-      {
-        label: "Lợi nhuận",
-        data: profits || [],
-        backgroundColor: "rgba(75, 192, 192, 0.6)"
+  // Tính tổng chi phí bổ sung cho 1 tháng
+  const calcTotalExtraCost = (month) => {
+    if (!extraCostsByMonth[month]) return 0;
+    return Object.values(extraCostsByMonth[month]).reduce((acc, val) => {
+      const num = Number(val);
+      return acc + (isNaN(num) ? 0 : num);
+    }, 0);
+  };
+
+  // Tạo data cho Bar chart: doanh thu, chi phí (gốc + bổ sung), lợi nhuận (cập nhật)
+  const createBarData = () => {
+    if (!profitData.profit_by_month) return { labels: [], datasets: [] };
+
+    const labels = profitData.profit_by_month.map(([month]) => month);
+    const revenues = [];
+    const costs = [];
+    const profits = [];
+
+    profitData.profit_by_month.forEach(([month, revenue, cost, profit]) => {
+      const extra = calcTotalExtraCost(month);
+      revenues.push(revenue);
+      costs.push(cost + extra);
+      profits.push(revenue - (cost + extra));
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Doanh thu",
+          data: revenues,
+          backgroundColor: "rgba(54, 162, 235, 0.6)"
+        },
+        {
+          label: "Tổng chi phí (gốc + bổ sung)",
+          data: costs,
+          backgroundColor: "rgba(255, 99, 132, 0.6)"
+        },
+        {
+          label: "Lợi nhuận mới",
+          data: profits,
+          backgroundColor: "rgba(75, 192, 192, 0.6)"
+        }
+      ]
+    };
+  };
+
+  // Xử lý thay đổi input chi phí bổ sung
+  const handleExtraCostChange = (month, key, value) => {
+    setExtraCostsByMonth((prev) => ({
+      ...prev,
+      [month]: {
+        ...prev[month],
+        [key]: value
       }
-    ]
-  });
-
-  // Hàm tính tổng
-
+    }));
+  };
 
   return (
     <div className="container mt-5">
-      <h2>Lợi nhuận</h2>
+      <h2>Lợi nhuận theo tháng với chi phí bổ sung</h2>
 
-      {/* Tabs */}
-      <ul className="nav nav-tabs mb-3">
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === "overview" ? "active" : ""}`}
-            onClick={() => setActiveTab("overview")}
-          >
-            Tổng quan
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === "month" ? "active" : ""}`}
-            onClick={() => setActiveTab("month")}
-          >
-            Theo tháng
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === "brand" ? "active" : ""}`}
-            onClick={() => setActiveTab("brand")}
-          >
-            Theo thương hiệu
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === "category" ? "active" : ""}`}
-            onClick={() => setActiveTab("category")}
-          >
-            Theo danh mục
-          </button>
-        </li>
-      </ul>
+      {/* Bảng nhập chi phí bổ sung theo tháng */}
+      <table className="table table-bordered mb-4">
+        <thead>
+          <tr>
+            <th>Tháng</th>
+            <th>Nhân viên</th>
+            <th>Mặt bằng</th>
+            <th>Sinh hoạt</th>
+            <th>Khác</th>
+            <th>Tổng chi phí bổ sung</th>
+            <th>Doanh thu</th>
+            <th>Chi phí gốc</th>
+            <th>Tổng chi phí</th>
+            <th>Lợi nhuận mới</th>
+          </tr>
+        </thead>
+        <tbody>
+          {profitData.profit_by_month?.map(([month, revenue, cost]) => {
+            const extraTotal = calcTotalExtraCost(month);
+            const totalCost = cost + extraTotal;
+            const newProfit = revenue - totalCost;
 
-      {/* Tổng quan */}
-      {activeTab === "overview" && (
-        <div>
-          <h5>Tổng quan:</h5>
-          <p>
-            <b>Doanh thu:</b>{" "}
-            {(profitData.totals?.revenue || 0).toLocaleString()} VNĐ
-          </p>
-          <p>
-            <b>Tổng chi phí:</b>{" "}
-            {(profitData.totals?.cost || 0).toLocaleString()} VNĐ
-          </p>
-          <p>
-            <b>Lợi nhuận:</b>{" "}
-            {(profitData.totals?.profit || 0).toLocaleString()} VNĐ
-          </p>
-        </div>
-      )}
+            return (
+              <tr key={month}>
+                <td>{month}</td>
+                {["staff", "rent", "living", "other"].map((key) => (
+                  <td key={key}>
+                    <input
+                      type="number"
+                      min="0"
+                      className="form-control"
+                      value={extraCostsByMonth[month]?.[key] || ""}
+                      onChange={(e) =>
+                        handleExtraCostChange(month, key, e.target.value)
+                      }
+                    />
+                  </td>
+                ))}
+                <td>{extraTotal.toLocaleString()}</td>
+                <td>{revenue.toLocaleString()}</td>
+                <td>{cost.toLocaleString()}</td>
+                <td>{totalCost.toLocaleString()}</td>
+                <td>{newProfit.toLocaleString()}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
 
-      {/* Theo tháng */}
-      {activeTab === "month" && (
-        <div>
-          <h5>Doanh thu - Chi phí - Lợi nhuận theo tháng</h5>
-          {(() => {
-
-
-            return
-          })()}
-          <Bar
-            data={createBarData(
-              profitData.profit_by_month?.map((r) => r[0]),
-              profitData.profit_by_month?.map((r) => r[1]),
-              profitData.profit_by_month?.map((r) => r[2]),
-              profitData.profit_by_month?.map((r) => r[3])
-            )}
-          />
-        </div>
-      )}
-
-      {/* Theo brand */}
-      {activeTab === "brand" && (
-        <div>
-          <h5>Doanh thu - Chi phí - Lợi nhuận theo thương hiệu</h5>
-          {(() => {
-
-            return
-          })()}
-          <Bar
-            data={createBarData(
-              profitData.profit_by_brand?.map((r) => r[0]),
-              profitData.profit_by_brand?.map((r) => r[1]),
-              profitData.profit_by_brand?.map((r) => r[2]),
-              profitData.profit_by_brand?.map((r) => r[3])
-            )}
-          />
-        </div>
-      )}
-
-      {/* Theo category */}
-      {activeTab === "category" && (
-        <div>
-          <h5>Doanh thu - Chi phí - Lợi nhuận theo danh mục</h5>
-          {(() => {
-
-            return
-
-          })()}
-          <Bar
-            data={createBarData(
-              profitData.profit_by_category?.map((r) => `${r[0]}`),
-              profitData.profit_by_category?.map((r) => r[1]),
-              profitData.profit_by_category?.map((r) => r[2]),
-              profitData.profit_by_category?.map((r) => r[3])
-            )}
-          />
-        </div>
-      )}
+      {/* Biểu đồ */}
+      <Bar data={createBarData()} />
     </div>
   );
 }

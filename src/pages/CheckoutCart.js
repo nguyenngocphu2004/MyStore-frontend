@@ -10,18 +10,32 @@ function CheckoutCart() {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  // Tạo đơn hàng từ giỏ
+  // Tạo đơn hàng từ giỏ (gửi thông tin khách + sản phẩm)
   useEffect(() => {
     const createOrder = async () => {
       try {
+        const checkoutInfo = JSON.parse(localStorage.getItem("checkoutInfo"));
+        const selectedProducts = JSON.parse(localStorage.getItem("selectedProducts"));
+
+        if (!checkoutInfo || !selectedProducts || selectedProducts.length === 0) {
+          setError("Không tìm thấy thông tin đơn hàng hoặc sản phẩm chưa được chọn.");
+          setLoading(false);
+          return;
+        }
+
         const res = await axios.post(
           "http://localhost:5000/api/create_order_from_cart",
-          {},
+          {
+            checkoutInfo,
+            products: selectedProducts,
+          },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+
         setOrder(res.data);
       } catch (err) {
         console.error("Lỗi tạo đơn hàng:", err);
+        setError("Lỗi tạo đơn hàng, vui lòng thử lại.");
       } finally {
         setLoading(false);
       }
@@ -57,8 +71,14 @@ function CheckoutCart() {
 
       if (selectedMethod === "COD") {
         alert("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+        // Xoá giỏ hàng và các thông tin đã lưu
+        localStorage.removeItem("selectedProducts");
+        localStorage.removeItem("checkoutInfo");
         navigate("/orders");
       } else if (data.payUrl) {
+        // Xoá giỏ hàng và thông tin khi chuyển trang thanh toán
+        localStorage.removeItem("selectedProducts");
+        localStorage.removeItem("checkoutInfo");
         window.location.href = data.payUrl;
       } else {
         setError(data.error || "Không thể xử lý thanh toán");
@@ -90,13 +110,16 @@ function CheckoutCart() {
   ];
 
   if (loading) return <div className="container py-5 text-center">Đang xử lý...</div>;
-  if (!order) return <div className="container py-5 text-center">Không tạo được đơn hàng.</div>;
+  if (!order) return <div className="container py-5 text-center">{error || "Không tạo được đơn hàng."}</div>;
 
   return (
     <div className="container my-5 d-flex justify-content-center">
       <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
         {/* Header màu vàng */}
-        <div className="card-header bg-warning text-center" style={{ backgroundColor: "#ffba00", color: "#000" }}>
+        <div
+          className="card-header bg-warning text-center"
+          style={{ backgroundColor: "#ffba00", color: "#000" }}
+        >
           <h4 className="mb-0">Thanh toán đơn hàng #{order.order_id}</h4>
         </div>
 

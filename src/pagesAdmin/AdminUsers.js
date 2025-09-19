@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-
+import ConfirmModal from "../components/ConfirmModal";
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [newUser, setNewUser] = useState({
     username: "",
     email: "",
@@ -81,7 +82,6 @@ export default function AdminUsers() {
 
   // --- Xóa user ---
   const handleDeleteUser = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa user này?")) return;
     const res = await fetch(`http://localhost:5000/admin/users/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -192,7 +192,7 @@ export default function AdminUsers() {
                   {role === "ADMIN" && (
                   <button
                     className="btn btn-danger btn-sm"
-                    onClick={() => handleDeleteUser(u.id)}
+                    onClick={() => setConfirmDeleteId(u.id)}
                   >
                     Xóa
                   </button>
@@ -275,6 +275,15 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+      <ConfirmModal
+      show={confirmDeleteId !== null}
+      message="Bạn có chắc muốn xóa user này?"
+      onConfirm={() => {
+        handleDeleteUser(confirmDeleteId);
+        setConfirmDeleteId(null);
+      }}
+      onCancel={() => setConfirmDeleteId(null)}
+    />
     </div>
   );
 }
