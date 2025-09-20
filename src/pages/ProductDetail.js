@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -10,6 +9,7 @@ import {
   FaStar,
   FaStarHalfAlt,
   FaRegStar,
+  FaThumbsUp
 } from "react-icons/fa";
 
 function ProductDetail() {
@@ -381,10 +381,10 @@ function ProductDetail() {
                     style={{ gap: "10px" }}
                   >
                     <button
-                      className="btn btn-sm btn-outline-success"
+                      className="btn btn-sm btn-outline-primary"
                       onClick={() => handleVote(cmt.id, "like")}
                     >
-                      👍 Hữu ích ({cmt.likes || 0})
+                      <FaThumbsUp className="me-1" />({cmt.likes || 0})
                     </button>
                     <small className="text-muted">{cmt.created_at}</small>
                   </div>

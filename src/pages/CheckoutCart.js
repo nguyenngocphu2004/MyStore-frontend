@@ -24,7 +24,7 @@ function CheckoutCart() {
         }
 
         const res = await axios.post(
-          "http://localhost:5000/api/create_order_from_cart",
+          "http://localhost:5000/create_order_from_cart",
           {
             checkoutInfo,
             products: selectedProducts,

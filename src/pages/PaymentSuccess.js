@@ -31,7 +31,7 @@ function PaymentSuccess() {
 
           if (data.status && data.status.toLowerCase() === "paid") {
             setStatus("success");
-            setMessage("Thanh toán thành công (Momo)!");
+            setMessage("Thanh toán thành công!");
           } else {
             setStatus("failed");
             setMessage("Thanh toán thất bại (Momo). Vui lòng thử lại.");

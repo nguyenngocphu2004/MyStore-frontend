@@ -35,7 +35,7 @@ function GuestOrders() {
     setError(""); setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/request-otp", {
+      const res = await fetch("http://localhost:5000/request-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
@@ -52,7 +52,7 @@ function GuestOrders() {
     setError(""); setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/orders/guest", {
+      const res = await fetch("http://localhost:5000/orders/guest", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
       });
@@ -128,7 +128,7 @@ function GuestOrders() {
           {currentOrders.map((o) => (
             <div key={o.id} className="card mb-3">
               <div className="card-body">
-                <h5 className="card-title">Đơn hàng #{o.id}</h5>
+                <h5 className="card-title">Đơn hàng #{o.order_code}</h5>
                 <p><b>Tổng tiền:</b> {formatCurrency(o.total_price)}</p>
                 <p><b>Giao hàng:</b> {o.delivery_method === "home" ? "Tại nhà" : "Tại cửa hàng"}</p>
                 {o.delivery_method === "home" && <p><b>Địa chỉ:</b> {o.address}</p>}

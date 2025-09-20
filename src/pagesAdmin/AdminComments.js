@@ -12,7 +12,7 @@ function AdminComments() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/admin/comments", {
+      .get("http://localhost:5000/admin/comments", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {

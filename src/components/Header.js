@@ -185,11 +185,13 @@ function Header() {
             {user ? (
               <div className="position-relative">
                 <button
-                  className="btn btn-outline-dark"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                >
-                  {user} ▼
-                </button>
+  className="btn btn-outline-dark"
+  onClick={() => setDropdownOpen(!dropdownOpen)}
+  title={user}
+>
+  {user.length > 6 ? user.slice(0, 6) + "..." : user} ▼
+</button>
+
                 {dropdownOpen && (
                   <div
                     className="dropdown-menu show"

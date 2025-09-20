@@ -86,7 +86,7 @@ function Checkout() {
       address: deliveryMethod === "home" ? address : undefined,
     };
 
-    fetch("http://localhost:5000/api/buy", {
+    fetch("http://localhost:5000/buy", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
