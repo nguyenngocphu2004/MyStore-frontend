@@ -1,7 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
+import { BiSearch } from "react-icons/bi";
+import "react-toastify/dist/ReactToastify.css";
 
 function Header() {
   const [search, setSearch] = useState("");
@@ -10,6 +12,7 @@ function Header() {
   const [cartCount, setCartCount] = useState(0);
   const dropdownRef = useRef();
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
 
   // Load user
@@ -36,6 +39,13 @@ function Header() {
     };
   }, []);
 
+  // Reset search khi rời trang /search
+  useEffect(() => {
+    if (!location.pathname.startsWith("/search")) {
+      setSearch("");
+    }
+  }, [location.pathname]);
+
   // Fetch cart count
   const fetchCartCount = useCallback(async () => {
     if (!token) return;
@@ -61,13 +71,22 @@ function Header() {
   const handleSearch = () => {
     if (search.trim() !== "") {
       navigate(`/search?q=${encodeURIComponent(search.trim())}`);
-      setSearch("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
-   const goToChangePassword = () => {
-  setDropdownOpen(false);
-  navigate("/change-password");
-};
+
+  const goToChangePassword = () => {
+    setDropdownOpen(false);
+    navigate("/change-password");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goToProfile = () => {
+    setDropdownOpen(false);
+    navigate("/profile");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
@@ -77,11 +96,7 @@ function Header() {
 
     toast.success("Đăng xuất thành công!", { autoClose: 2000 });
     navigate("/");
-  };
-
-  const goToProfile = () => {
-    setDropdownOpen(false);
-    navigate("/profile");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -89,7 +104,11 @@ function Header() {
       <header className="bg-warning sticky-top shadow-sm" style={{ zIndex: 1020 }}>
         <div className="container d-flex align-items-center justify-content-between py-2">
           {/* Logo */}
-          <Link to="/" className="text-decoration-none me-4">
+          <Link
+            to="/"
+            className="text-decoration-none me-4"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
             <h1
               className="m-0"
               style={{
@@ -106,31 +125,69 @@ function Header() {
 
           {/* Menu */}
           <nav className="d-none d-md-flex gap-3 fw-medium me-4">
-            <Link to="/phones" className="text-dark text-decoration-none">Điện thoại</Link>
-            <Link to="/laptops" className="text-dark text-decoration-none">Laptop</Link>
-            <Link to="/contact" className="text-dark text-decoration-none">Liên hệ</Link>
-            <Link to="/about_us" className="text-dark text-decoration-none">Về chúng tôi</Link>
+            <Link
+              to="/phones"
+              className="text-dark text-decoration-none"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              Điện thoại
+            </Link>
+            <Link
+              to="/laptops"
+              className="text-dark text-decoration-none"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              Laptop
+            </Link>
+            <Link
+              to="/aboutus"
+              className="text-dark text-decoration-none"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              Về chúng tôi
+            </Link>
           </nav>
 
           {/* Search + Icons */}
           <div className="d-flex align-items-center gap-3 position-relative" ref={dropdownRef}>
             {/* Search */}
-            <div className="input-group" style={{ width: "220px" }}>
+            <div className="position-relative" style={{ width: "300px" }}>
               <input
                 type="text"
-                className="form-control rounded-start"
-                placeholder="Tìm kiếm sản phẩm..."
+                className="form-control"
+                placeholder="Tìm sản phẩm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                style={{ height: "38px", outline: "none", boxShadow: "none" }}
+                style={{
+                  height: "42px",
+                  borderRadius: "50px",
+                  paddingLeft: "40px",
+                  border: "none",
+                  outline: "none",
+                  boxShadow: "none",
+                }}
+              />
+              <BiSearch
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "15px",
+                  transform: "translateY(-50%)",
+                  color: "#888",
+                  fontSize: "20px",
+                  pointerEvents: "none",
+                }}
               />
             </div>
 
             {/* User */}
             {user ? (
               <div className="position-relative">
-                <button className="btn btn-outline-dark" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                <button
+                  className="btn btn-outline-dark"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
                   {user} ▼
                 </button>
                 {dropdownOpen && (
@@ -147,20 +204,38 @@ function Header() {
                       zIndex: 1050,
                     }}
                   >
-                    <button className="dropdown-item" onClick={goToProfile}>Thông tin hồ sơ</button>
-                    <button className="dropdown-item " onClick={goToChangePassword}>Đổi mật khẩu</button>
-                    <button className="dropdown-item text-danger" onClick={handleLogout}>Đăng xuất</button>
+                    <button className="dropdown-item" onClick={goToProfile}>
+                      Thông tin hồ sơ
+                    </button>
+                    <button className="dropdown-item" onClick={goToChangePassword}>
+                      Đổi mật khẩu
+                    </button>
+                    <button
+                      className="dropdown-item text-danger"
+                      onClick={handleLogout}
+                    >
+                      Đăng xuất
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link to="/Login" className="btn btn-outline-dark">Đăng nhập</Link>
+              <Link
+                to="/login"
+                className="btn btn-outline-dark"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              >
+                Đăng nhập
+              </Link>
             )}
 
             {/* Cart */}
             <button
               className="btn position-relative btn-outline-dark cart-icon"
-              onClick={() => navigate("/cart")}
+              onClick={() => {
+                navigate("/cart");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               title="Giỏ hàng"
             >
               🛒
@@ -174,7 +249,10 @@ function Header() {
             {/* Tra cứu đơn hàng */}
             <button
               className="btn btn-outline-dark"
-              onClick={() => navigate("/guest-orders")}
+              onClick={() => {
+                navigate("/guest-orders");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               title="Tra cứu đơn hàng"
             >
               Tra cứu đơn hàng
@@ -183,7 +261,7 @@ function Header() {
         </div>
       </header>
 
-      {/* ToastContainer để hiển thị toast */}
+      {/* ToastContainer */}
       <ToastContainer
         position="top-right"
         autoClose={2000}

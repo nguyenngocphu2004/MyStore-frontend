@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
 
+
 function Profile() {
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -21,6 +22,7 @@ function Profile() {
   onConfirm: null,
   onCancel: null,
 });
+
 const openConfirm = (message, onConfirm) => {
   setConfirmData({
     show: true,

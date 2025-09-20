@@ -17,6 +17,7 @@ export default function ProfitDashboard() {
   const [profitData, setProfitData] = useState([]);
   const [extraCostsByMonth, setExtraCostsByMonth] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [toast, setToast] = useState(null); // { msg, type }
   const itemsPerPage = 2;
   const token = localStorage.getItem("adminToken");
 
@@ -74,6 +75,11 @@ export default function ProfitDashboard() {
     }));
   };
 
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const saveExtraCosts = async () => {
     const res = await fetch("http://localhost:5000/admin/extra_costs", {
       method: "POST",
@@ -83,8 +89,11 @@ export default function ProfitDashboard() {
       },
       body: JSON.stringify(extraCostsByMonth),
     });
-    if (res.ok) alert("Lưu chi phí bổ sung thành công!");
-    else alert("Lưu thất bại!");
+    if (res.ok) {
+      showToast("Lưu chi phí bổ sung thành công!", "success");
+    } else {
+      showToast("Lưu thất bại!", "danger");
+    }
   };
 
   const totalPages = Math.ceil(profitData.length / itemsPerPage);
@@ -92,6 +101,27 @@ export default function ProfitDashboard() {
   return (
     <div className="container mt-5">
       <h2>Lợi nhuận theo tháng với chi phí bổ sung</h2>
+
+      {/* Toast hiển thị góc trên bên phải */}
+      {toast && (
+        <div
+          className={`toast show position-fixed top-0 end-0 m-3 text-white border-0 ${
+            toast.type === "success" ? "bg-success" : "bg-danger"
+          }`}
+          role="alert"
+          style={{ zIndex: 9999 }}
+        >
+          <div className="d-flex">
+            <div className="toast-body">{toast.msg}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-white me-2 m-auto"
+              onClick={() => setToast(null)}
+            ></button>
+          </div>
+        </div>
+      )}
+
       <button className="btn btn-primary mb-3" onClick={saveExtraCosts}>
         Lưu chi phí bổ sung
       </button>
@@ -114,7 +144,11 @@ export default function ProfitDashboard() {
         <tbody>
           {paginatedData.map(([month, revenue, cost]) => {
             const extra = extraCostsByMonth[month] || {};
-            const extraTotal = (extra.staff || 0) + (extra.rent || 0) + (extra.living || 0) + (extra.other || 0);
+            const extraTotal =
+              (extra.staff || 0) +
+              (extra.rent || 0) +
+              (extra.living || 0) +
+              (extra.other || 0);
             const totalCost = cost + extraTotal;
             const profitNew = revenue - totalCost;
 
@@ -128,7 +162,9 @@ export default function ProfitDashboard() {
                       min="0"
                       className="form-control"
                       value={extra[key] || 0}
-                      onChange={(e) => handleExtraCostChange(month, key, e.target.value)}
+                      onChange={(e) =>
+                        handleExtraCostChange(month, key, e.target.value)
+                      }
                     />
                   </td>
                 ))}
@@ -151,7 +187,9 @@ export default function ProfitDashboard() {
         >
           &lt; Trước
         </button>
-        <span className="align-self-center">Trang {currentPage} / {totalPages}</span>
+        <span className="align-self-center">
+          Trang {currentPage} / {totalPages}
+        </span>
         <button
           className="btn btn-secondary ms-2"
           disabled={currentPage === totalPages}

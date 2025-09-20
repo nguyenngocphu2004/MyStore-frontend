@@ -29,6 +29,8 @@ import CheckoutCartInfo from "./pages/CheckoutCartInfo";
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminChat from "./pagesAdmin/AdminChat";
 import ChangePassword from "./pages/ChangePassword";
+import AdminComments from "./pagesAdmin/AdminComments";
+import AboutUs from "./pages/AboutUs";
 function AppRoutes() {
   return (
     <Routes>
@@ -50,6 +52,7 @@ function AppRoutes() {
       <Route path="/checkout-cart-info" element={<CheckoutCartInfo />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/change-password" element={<ChangePassword />} />
+      <Route path="/aboutus" element={<AboutUs />} />
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
           <AdminLayout />
@@ -65,6 +68,7 @@ function AppRoutes() {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="orders/:id" element={<AdminOrderDetail />} />
         <Route path="adminchat" element={<AdminChat />} />
+        <Route path="admincomments" element={<AdminComments />} />
       </Route>
 
 

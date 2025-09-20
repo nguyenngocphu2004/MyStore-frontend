@@ -25,6 +25,7 @@ function ProductDetail() {
   const token = localStorage.getItem("token");
   const [rating, setRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // 🔹 reply state
   const [replyingTo, setReplyingTo] = useState(null);
@@ -353,7 +354,7 @@ function ProductDetail() {
             <h5>Bình luận</h5>
 
             <ul className="list-group">
-              {comments.map((cmt) => (
+              {comments.slice(0, visibleCount).map((cmt) => (
                 <li key={cmt.id} className="list-group-item">
                   <div
                     className="d-flex align-items-center"
@@ -436,6 +437,18 @@ function ProductDetail() {
                 </li>
               ))}
             </ul>
+            {visibleCount < comments.length && (
+  <div className="text-center mt-2">
+  <button
+    className="btn btn-link"
+    style={{ textDecoration: "none" }}
+    onClick={() => setVisibleCount(visibleCount + 5)}
+  >
+    Xem thêm bình luận
+  </button>
+</div>
+
+)}
           </div>
 
           <form onSubmit={handleSubmitComment} className="comment-form mt-3">

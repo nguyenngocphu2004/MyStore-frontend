@@ -102,6 +102,16 @@ export default function AdminLayout() {
           </li>
           <li>
             <NavLink
+              to="admincomments"
+              className={({ isActive }) =>
+                `nav-link text-white ${isActive ? "active bg-primary" : ""}`
+              }
+            >
+              Quản lí bình luận
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
               to="adminchat"
               className={({ isActive }) =>
                 `nav-link text-white ${isActive ? "active bg-primary" : ""}`
