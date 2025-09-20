@@ -90,7 +90,7 @@ export default function ProfitDashboard() {
       body: JSON.stringify(extraCostsByMonth),
     });
     if (res.ok) {
-      showToast("Lưu chi phí bổ sung thành công!", "success");
+      showToast("Lưu chi phí thành công!", "success");
     } else {
       showToast("Lưu thất bại!", "danger");
     }
@@ -123,7 +123,7 @@ export default function ProfitDashboard() {
       )}
 
       <button className="btn btn-primary mb-3" onClick={saveExtraCosts}>
-        Lưu chi phí bổ sung
+        Lưu chi phí
       </button>
 
       <table className="table table-bordered mb-4">

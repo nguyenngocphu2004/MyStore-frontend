@@ -105,7 +105,11 @@ const openConfirm = (message, onConfirm) => {
         if (!res.ok) throw new Error("Cập nhật thất bại");
         return res.json();
       })
-      .then(() => fetchOrders())
+
+      .then(() => {
+        showNotification("Nhận hàng thành công!");
+        fetchOrders();
+      })
       .catch(err => showNotification(err.message));
   });
 };

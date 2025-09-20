@@ -79,7 +79,9 @@ function Payment() {
       if (res.ok) {
         if (selectedMethod === "COD") {
           showNotification("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
-          navigate("/profile");
+         setTimeout(() => {
+        navigate("/profile");
+        }, 2000);
         } else if (data.payUrl) {
           window.location.href = data.payUrl;
         }
