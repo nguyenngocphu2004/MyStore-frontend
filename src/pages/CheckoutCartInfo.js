@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-
+import {
+  BiErrorCircle,
+} from "react-icons/bi";
 function CheckoutCartInfo() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -15,6 +17,11 @@ function CheckoutCartInfo() {
     deliveryMethod: "store",
   });
   const [error, setError] = useState("");
+
+  // Lỗi realtime cho phone & email
+  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
+
   const token = localStorage.getItem("token");
 
   // Lấy thông tin user nếu đã đăng nhập
@@ -40,12 +47,52 @@ function CheckoutCartInfo() {
     fetchProfile();
   }, [token]);
 
+  // Validate realtime số điện thoại (10 số)
+  function handlePhoneChange(e) {
+    const value = e.target.value;
+    // Chỉ cho phép nhập số, tối đa 10 ký tự
+    if (/^[0-9]*$/.test(value) && value.length <= 10) {
+      setInfo((prev) => ({ ...prev, phone: value }));
+
+      if (value.length !== 10) {
+        setPhoneError("Số điện thoại phải đúng 10 chữ số");
+      } else {
+        setPhoneError("");
+      }
+    }
+  }
+
+  // Validate realtime email
+  function handleEmailChange(e) {
+    const value = e.target.value;
+    setInfo((prev) => ({ ...prev, email: value }));
+
+    if (value.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value.trim())) {
+        setEmailError("Email không hợp lệ");
+      } else {
+        setEmailError("");
+      }
+    } else {
+      setEmailError("");
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
 
     if (!info.name || !info.phone) {
       setError("Vui lòng nhập họ tên và số điện thoại");
+      return;
+    }
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
+    if (emailError) {
+      setError(emailError);
       return;
     }
     if (info.deliveryMethod === "home" && !info.address) {
@@ -65,7 +112,11 @@ function CheckoutCartInfo() {
     // Chuyển sang trang thanh toán
     navigate("/checkout-cart");
   };
-
+    const ErrorMessage = ({ message }) => (
+    <small className="text-danger d-flex align-items-center mt-1">
+      <BiErrorCircle style={{ marginRight: "4px" }} /> {message}
+    </small>
+  );
   return (
     <div className="container py-5" style={{ maxWidth: "500px" }}>
       <h3>Thông tin nhận hàng</h3>
@@ -78,6 +129,7 @@ function CheckoutCartInfo() {
             className="form-control"
             value={info.name}
             onChange={(e) => setInfo({ ...info, name: e.target.value })}
+            required
           />
         </div>
         <div className="mb-3">
@@ -86,8 +138,10 @@ function CheckoutCartInfo() {
             type="tel"
             className="form-control"
             value={info.phone}
-            onChange={(e) => setInfo({ ...info, phone: e.target.value })}
+            onChange={handlePhoneChange}
+            required
           />
+          {phoneError && <ErrorMessage message={phoneError} />}
         </div>
         <div className="mb-3">
           <label>Email:</label>
@@ -95,8 +149,9 @@ function CheckoutCartInfo() {
             type="email"
             className="form-control"
             value={info.email}
-            onChange={(e) => setInfo({ ...info, email: e.target.value })}
+            onChange={handleEmailChange}
           />
+          {emailError && <ErrorMessage message={emailError} />}
         </div>
         <div className="mb-3">
           <label>Phương thức nhận hàng:</label>
@@ -129,6 +184,7 @@ function CheckoutCartInfo() {
               className="form-control"
               value={info.address}
               onChange={(e) => setInfo({ ...info, address: e.target.value })}
+              required={info.deliveryMethod === "home"}
             />
           </div>
         )}
@@ -144,7 +200,10 @@ function CheckoutCartInfo() {
           <h4 className="mt-4">Sản phẩm đã chọn:</h4>
           <ul className="list-group">
             {selectedProducts.map((item) => (
-              <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
+              <li
+                key={item.id}
+                className="list-group-item d-flex justify-content-between align-items-center"
+              >
                 {item.name} - {item.quantity} x {item.unit_price.toLocaleString("vi-VN")}₫
                 <span>{(item.quantity * item.unit_price).toLocaleString("vi-VN")}₫</span>
               </li>

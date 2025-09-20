@@ -7,15 +7,26 @@ function AdminChat() {
   const [connected, setConnected] = useState(false);
   const [rooms, setRooms] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [allMessages, setAllMessages] = useState({});
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
+  // Giữ currentRoom để dùng trong socket listener
   const currentRoomRef = useRef(currentRoom);
   useEffect(() => {
     currentRoomRef.current = currentRoom;
   }, [currentRoom]);
-
+  useEffect(() => {
+  // Gọi API để lấy danh sách khách đang kết nối
+  fetch("http://localhost:5000/connected-clients")
+    .then((res) => res.json())
+    .then((data) => {
+      setRooms(data);
+    })
+    .catch((err) => {
+      console.error("Lỗi khi lấy danh sách khách đang kết nối:", err);
+    });
+}, []);
   useEffect(() => {
     socket = io("http://localhost:5000");
 
@@ -25,22 +36,31 @@ function AdminChat() {
     });
 
     socket.on("admin-notify", ({ roomId, msg }) => {
-      console.log(msg);
+      console.log(`New client in room: ${roomId}`);
       setRooms((prev) => (prev.includes(roomId) ? prev : [...prev, roomId]));
     });
 
     socket.on("admin-notify-disconnect", ({ roomId }) => {
       setRooms((prev) => prev.filter((r) => r !== roomId));
+      setAllMessages((prev) => {
+        const newMessages = { ...prev };
+        delete newMessages[roomId];
+        return newMessages;
+      });
       if (currentRoomRef.current === roomId) {
         setCurrentRoom(null);
-        setMessages([]);
       }
     });
 
     socket.on("admin-message", ({ room, text }) => {
-      if (room === currentRoomRef.current) {
-        setMessages((prev) => [...prev, { sender: "client", text }]);
-      }
+      setAllMessages((prev) => {
+        const updatedRoomMessages = [...(prev[room] || []), { sender: "client", text }];
+        localStorage.setItem("adminMessages_" + room, JSON.stringify(updatedRoomMessages));
+        return {
+          ...prev,
+          [room]: updatedRoomMessages,
+        };
+      });
     });
 
     return () => {
@@ -48,24 +68,16 @@ function AdminChat() {
     };
   }, []);
 
+  // Load tin nhắn cũ từ localStorage khi chuyển phòng
   useEffect(() => {
     if (currentRoom) {
       const savedMessages = localStorage.getItem("adminMessages_" + currentRoom);
-      if (savedMessages) {
-        setMessages(JSON.parse(savedMessages));
-      } else {
-        setMessages([]);
-      }
-    } else {
-      setMessages([]);
+      setAllMessages((prev) => ({
+        ...prev,
+        [currentRoom]: savedMessages ? JSON.parse(savedMessages) : [],
+      }));
     }
   }, [currentRoom]);
-
-  useEffect(() => {
-    if (currentRoom) {
-      localStorage.setItem("adminMessages_" + currentRoom, JSON.stringify(messages));
-    }
-  }, [messages, currentRoom]);
 
   const joinRoom = (roomId) => {
     setCurrentRoom(roomId);
@@ -74,14 +86,24 @@ function AdminChat() {
 
   const sendMessage = () => {
     if (!input.trim() || !currentRoom) return;
+
+    const msg = { sender: "admin", text: input };
+    setAllMessages((prev) => {
+      const updatedRoomMessages = [...(prev[currentRoom] || []), msg];
+      localStorage.setItem("adminMessages_" + currentRoom, JSON.stringify(updatedRoomMessages));
+      return {
+        ...prev,
+        [currentRoom]: updatedRoomMessages,
+      };
+    });
+
     socket.emit("admin-message", { room: currentRoom, msg: input });
-    setMessages((prev) => [...prev, { sender: "admin", text: input }]);
     setInput("");
   };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [allMessages, currentRoom]);
 
   // ----- Styles -----
   const styles = {
@@ -182,11 +204,6 @@ function AdminChat() {
       border: "1px solid #ccc",
       outline: "none",
       fontSize: "1rem",
-      transition: "border-color 0.2s",
-    },
-    inputBoxFocus: {
-      borderColor: "#4caf50",
-      boxShadow: "0 0 5px #4caf50",
     },
     sendButton: {
       marginLeft: "12px",
@@ -197,11 +214,7 @@ function AdminChat() {
       padding: "0 20px",
       fontSize: "1.1rem",
       cursor: "pointer",
-      transition: "background-color 0.3s",
       userSelect: "none",
-    },
-    sendButtonHover: {
-      backgroundColor: "#43a047",
     },
     noRoomSelected: {
       textAlign: "center",
@@ -227,7 +240,6 @@ function AdminChat() {
               ...(room === currentRoom ? styles.roomItemActive : {}),
             }}
             onClick={() => joinRoom(room)}
-            onKeyDown={(e) => e.key === "Enter" && joinRoom(room)}
             tabIndex={0}
             role="button"
             aria-pressed={room === currentRoom}
@@ -246,7 +258,7 @@ function AdminChat() {
         <div style={styles.messagesContainer}>
           {currentRoom ? (
             <>
-              {messages.map((msg, i) => (
+              {(allMessages[currentRoom] || []).map((msg, i) => (
                 <div
                   key={i}
                   style={{

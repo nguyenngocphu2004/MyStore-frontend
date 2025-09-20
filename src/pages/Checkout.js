@@ -7,12 +7,16 @@ function Checkout() {
 
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [ ,setIsLoggedIn] = useState(false);
-  const [,setUserInfo] = useState({ name: "", phone: "", email: "" });
+  const [, setIsLoggedIn] = useState(false);
+  const [, setUserInfo] = useState({ name: "", phone: "", email: "" });
   const [checkoutInfo, setCheckoutInfo] = useState({ name: "", phone: "", email: "" });
   const [deliveryMethod, setDeliveryMethod] = useState("store"); // store | home
   const [address, setAddress] = useState("");
   const [error, setError] = useState("");
+
+  // State riêng cho lỗi realtime
+  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   useEffect(() => {
     // Lấy thông tin sản phẩm
@@ -35,7 +39,6 @@ function Checkout() {
             phone: data.phone || "",
             email: data.email || "",
           });
-          // Copy vào checkout form
           setCheckoutInfo({
             name: data.username || data.email || "",
             phone: data.phone || "",
@@ -50,25 +53,66 @@ function Checkout() {
     }
   }, [productId]);
 
+  // Validate realtime số điện thoại
+  function handlePhoneChange(e) {
+    const value = e.target.value;
+    setCheckoutInfo((prev) => ({ ...prev, phone: value }));
+
+    // Check số điện thoại 10 số
+    const phoneRegex = /^[0-9]{0,10}$/; // cho phép tối đa 10 số nhập
+    if (!phoneRegex.test(value)) {
+      setPhoneError("Số điện thoại chỉ chứa chữ số và tối đa 10 ký tự");
+    } else if (value.length !== 10) {
+      setPhoneError("Số điện thoại phải đúng 10 chữ số");
+    } else {
+      setPhoneError("");
+    }
+  }
+
+  // Validate realtime email
+  function handleEmailChange(e) {
+    const value = e.target.value;
+    setCheckoutInfo((prev) => ({ ...prev, email: value }));
+
+    if (value.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value.trim())) {
+        setEmailError("Email không hợp lệ");
+      } else {
+        setEmailError("");
+      }
+    } else {
+      setEmailError("");
+    }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
     if (!product) return;
 
-    // Validate số lượng
     if (quantity < 1) {
       setError("Số lượng phải lớn hơn 0");
       return;
     }
 
-    // Với khách, bắt nhập họ tên và số điện thoại
     if (!checkoutInfo.name.trim() || !checkoutInfo.phone.trim()) {
       setError("Vui lòng nhập họ tên và số điện thoại");
       return;
     }
 
-    // Nếu giao tại nhà, yêu cầu nhập địa chỉ
+    // Kiểm tra lỗi realtime trước khi submit
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
+
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
     if (deliveryMethod === "home" && !address.trim()) {
       setError("Vui lòng nhập địa chỉ giao hàng");
       return;
@@ -166,23 +210,21 @@ function Checkout() {
               <input
                 type="tel"
                 value={checkoutInfo.phone}
-                onChange={(e) =>
-                  setCheckoutInfo((prev) => ({ ...prev, phone: e.target.value }))
-                }
+                onChange={handlePhoneChange}
                 className="form-control"
                 required
               />
+              {phoneError && <small className="text-danger">{phoneError}</small>}
             </div>
             <div className="mb-3">
               <label>Email:</label>
               <input
                 type="email"
                 value={checkoutInfo.email}
-                onChange={(e) =>
-                  setCheckoutInfo((prev) => ({ ...prev, email: e.target.value }))
-                }
+                onChange={handleEmailChange}
                 className="form-control"
               />
+              {emailError && <small className="text-danger">{emailError}</small>}
             </div>
 
             {/* Phương thức nhận hàng */}
