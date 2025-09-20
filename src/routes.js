@@ -28,7 +28,7 @@ import CheckoutCart from "./pages/CheckoutCart";
 import CheckoutCartInfo from "./pages/CheckoutCartInfo";
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminChat from "./pagesAdmin/AdminChat";
-
+import ChangePassword from "./pages/ChangePassword";
 function AppRoutes() {
   return (
     <Routes>
@@ -49,6 +49,7 @@ function AppRoutes() {
       <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/checkout-cart-info" element={<CheckoutCartInfo />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/change-password" element={<ChangePassword />} />
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
           <AdminLayout />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -13,105 +13,89 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function MonthlyProfitWithExtraCosts() {
-  const [profitData, setProfitData] = useState({});
-  const token = localStorage.getItem("adminToken");
-
-  // Lưu chi phí bổ sung theo tháng và theo loại (string để bind input)
+export default function ProfitDashboard() {
+  const [profitData, setProfitData] = useState([]);
   const [extraCostsByMonth, setExtraCostsByMonth] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
+  const token = localStorage.getItem("adminToken");
 
   useEffect(() => {
     const fetchProfit = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/admin/profit", {
-          headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch("http://localhost:5000/admin/profit", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfitData(data.profit_by_month);
+        const initialCosts = {};
+        data.profit_by_month.forEach(([month, , , , staff, rent, living, other]) => {
+          initialCosts[month] = { staff, rent, living, other };
         });
-        if (res.ok) {
-          const data = await res.json();
-          setProfitData(data);
-
-          // Khởi tạo extraCostsByMonth với các tháng có trong dữ liệu
-          if (data.profit_by_month) {
-            const initialCosts = {};
-            data.profit_by_month.forEach(([month]) => {
-              initialCosts[month] = { staff: "", rent: "", living: "", other: "" };
-            });
-            setExtraCostsByMonth(initialCosts);
-          }
-        } else {
-          console.error("Không lấy được dữ liệu lợi nhuận");
-        }
-      } catch (err) {
-        console.error("Lỗi fetch:", err);
+        setExtraCostsByMonth(initialCosts);
       }
     };
-
     fetchProfit();
   }, [token]);
 
-  // Tính tổng chi phí bổ sung cho 1 tháng
-  const calcTotalExtraCost = (month) => {
-    if (!extraCostsByMonth[month]) return 0;
-    return Object.values(extraCostsByMonth[month]).reduce((acc, val) => {
-      const num = Number(val);
-      return acc + (isNaN(num) ? 0 : num);
-    }, 0);
-  };
+  const paginatedData = useMemo(() => {
+    return profitData.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [profitData, currentPage]);
 
-  // Tạo data cho Bar chart: doanh thu, chi phí (gốc + bổ sung), lợi nhuận (cập nhật)
-  const createBarData = () => {
-    if (!profitData.profit_by_month) return { labels: [], datasets: [] };
-
-    const labels = profitData.profit_by_month.map(([month]) => month);
-    const revenues = [];
-    const costs = [];
-    const profits = [];
-
-    profitData.profit_by_month.forEach(([month, revenue, cost, profit]) => {
-      const extra = calcTotalExtraCost(month);
-      revenues.push(revenue);
-      costs.push(cost + extra);
-      profits.push(revenue - (cost + extra));
+  const chartData = useMemo(() => {
+    const labels = paginatedData.map(([month]) => month);
+    const revenues = paginatedData.map(([month, revenue]) => revenue);
+    const totalCosts = paginatedData.map(([month, _, cost]) => {
+      const extra = extraCostsByMonth[month] || {};
+      return cost + (extra.staff || 0) + (extra.rent || 0) + (extra.living || 0) + (extra.other || 0);
+    });
+    const profits = paginatedData.map(([month, revenue, cost]) => {
+      const extra = extraCostsByMonth[month] || {};
+      return revenue - (cost + (extra.staff || 0) + (extra.rent || 0) + (extra.living || 0) + (extra.other || 0));
     });
 
     return {
       labels,
       datasets: [
-        {
-          label: "Doanh thu",
-          data: revenues,
-          backgroundColor: "rgba(54, 162, 235, 0.6)"
-        },
-        {
-          label: "Tổng chi phí (gốc + bổ sung)",
-          data: costs,
-          backgroundColor: "rgba(255, 99, 132, 0.6)"
-        },
-        {
-          label: "Lợi nhuận mới",
-          data: profits,
-          backgroundColor: "rgba(75, 192, 192, 0.6)"
-        }
-      ]
+        { label: "Doanh thu", data: revenues, backgroundColor: "rgba(54, 162, 235, 0.6)" },
+        { label: "Tổng chi phí (gốc + bổ sung)", data: totalCosts, backgroundColor: "rgba(255, 99, 132, 0.6)" },
+        { label: "Lợi nhuận mới", data: profits, backgroundColor: "rgba(75, 192, 192, 0.6)" },
+      ],
     };
-  };
+  }, [paginatedData, extraCostsByMonth]);
 
-  // Xử lý thay đổi input chi phí bổ sung
-  const handleExtraCostChange = (month, key, value) => {
+  const handleExtraCostChange = (month, costType, value) => {
     setExtraCostsByMonth((prev) => ({
       ...prev,
-      [month]: {
-        ...prev[month],
-        [key]: value
-      }
+      [month]: { ...prev[month], [costType]: Number(value) || 0 },
     }));
   };
+
+  const saveExtraCosts = async () => {
+    const res = await fetch("http://localhost:5000/admin/extra_costs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(extraCostsByMonth),
+    });
+    if (res.ok) alert("Lưu chi phí bổ sung thành công!");
+    else alert("Lưu thất bại!");
+  };
+
+  const totalPages = Math.ceil(profitData.length / itemsPerPage);
 
   return (
     <div className="container mt-5">
       <h2>Lợi nhuận theo tháng với chi phí bổ sung</h2>
+      <button className="btn btn-primary mb-3" onClick={saveExtraCosts}>
+        Lưu chi phí bổ sung
+      </button>
 
-      {/* Bảng nhập chi phí bổ sung theo tháng */}
       <table className="table table-bordered mb-4">
         <thead>
           <tr>
@@ -128,10 +112,11 @@ export default function MonthlyProfitWithExtraCosts() {
           </tr>
         </thead>
         <tbody>
-          {profitData.profit_by_month?.map(([month, revenue, cost]) => {
-            const extraTotal = calcTotalExtraCost(month);
+          {paginatedData.map(([month, revenue, cost]) => {
+            const extra = extraCostsByMonth[month] || {};
+            const extraTotal = (extra.staff || 0) + (extra.rent || 0) + (extra.living || 0) + (extra.other || 0);
             const totalCost = cost + extraTotal;
-            const newProfit = revenue - totalCost;
+            const profitNew = revenue - totalCost;
 
             return (
               <tr key={month}>
@@ -142,10 +127,8 @@ export default function MonthlyProfitWithExtraCosts() {
                       type="number"
                       min="0"
                       className="form-control"
-                      value={extraCostsByMonth[month]?.[key] || ""}
-                      onChange={(e) =>
-                        handleExtraCostChange(month, key, e.target.value)
-                      }
+                      value={extra[key] || 0}
+                      onChange={(e) => handleExtraCostChange(month, key, e.target.value)}
                     />
                   </td>
                 ))}
@@ -153,15 +136,32 @@ export default function MonthlyProfitWithExtraCosts() {
                 <td>{revenue.toLocaleString()}</td>
                 <td>{cost.toLocaleString()}</td>
                 <td>{totalCost.toLocaleString()}</td>
-                <td>{newProfit.toLocaleString()}</td>
+                <td>{profitNew.toLocaleString()}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
 
-      {/* Biểu đồ */}
-      <Bar data={createBarData()} />
+      <div className="d-flex justify-content-center mb-4">
+        <button
+          className="btn btn-secondary me-2"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((prev) => prev - 1)}
+        >
+          &lt; Trước
+        </button>
+        <span className="align-self-center">Trang {currentPage} / {totalPages}</span>
+        <button
+          className="btn btn-secondary ms-2"
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage((prev) => prev + 1)}
+        >
+          Tiếp &gt;
+        </button>
+      </div>
+
+      <Bar data={chartData} />
     </div>
   );
 }

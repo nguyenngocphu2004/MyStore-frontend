@@ -64,7 +64,10 @@ function Header() {
       setSearch("");
     }
   };
-
+   const goToChangePassword = () => {
+  setDropdownOpen(false);
+  navigate("/change-password");
+};
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
@@ -145,6 +148,7 @@ function Header() {
                     }}
                   >
                     <button className="dropdown-item" onClick={goToProfile}>Thông tin hồ sơ</button>
+                    <button className="dropdown-item " onClick={goToChangePassword}>Đổi mật khẩu</button>
                     <button className="dropdown-item text-danger" onClick={handleLogout}>Đăng xuất</button>
                   </div>
                 )}

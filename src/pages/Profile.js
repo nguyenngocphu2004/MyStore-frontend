@@ -256,9 +256,7 @@ const openConfirm = (message, onConfirm) => {
                       name="username"
                       className="form-control"
                       value={form.username}
-                      onChange={handleChange}
-                      disabled={loading}
-                      required
+                      disabled
                     />
                   </div>
                   <div className="mb-3">

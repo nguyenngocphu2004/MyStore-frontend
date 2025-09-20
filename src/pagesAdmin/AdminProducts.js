@@ -34,17 +34,24 @@ export default function AdminProducts() {
   const [activeTab, setActiveTab] = useState("list"); // list | add | edit
   const token = localStorage.getItem("adminToken");
 
-  // Modal state
+  // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImages, setModalImages] = useState([]);
   const [modalTitle, setModalTitle] = useState("");
 
-  // Fetch data
-  const fetchProducts = async () => {
-    const res = await fetch("http://localhost:5000/products");
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const perPage = 8;
+
+  // Fetch products
+  const fetchProducts = async (pageNumber = 1) => {
+    const res = await fetch(`http://localhost:5000/products?page=${pageNumber}`);
     if (res.ok) {
       const data = await res.json();
       setProducts(data.products || []);
+      setPage(data.page);
+      setTotalPages(data.pages);
     }
   };
 
@@ -55,11 +62,6 @@ export default function AdminProducts() {
       setBrands(data);
     }
   };
-  const openDetail = (p) => {
-  setDetailProduct(p);
-  setDetailOpen(true);
-    };
-  const closeDetail = () => setDetailOpen(false);
 
   const fetchCategories = async () => {
     const res = await fetch("http://localhost:5000/categories");
@@ -70,16 +72,17 @@ export default function AdminProducts() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(page);
     fetchBrands();
     fetchCategories();
-  }, []);
+  }, [page]);
 
+  // Handle form change
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
   const handleFileChange = (e) => setImages(e.target.files);
 
-  // Thêm / sửa sản phẩm
+  // Add / Edit product
   const handleSubmit = async (e) => {
     e.preventDefault();
     const url = form.id
@@ -91,7 +94,7 @@ export default function AdminProducts() {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(form),
     });
@@ -103,7 +106,7 @@ export default function AdminProducts() {
 
     const product = await res.json();
 
-    // Upload ảnh nếu có
+    // Upload images
     if (images.length > 0) {
       const formData = new FormData();
       for (let i = 0; i < images.length; i++) formData.append("images", images[i]);
@@ -148,10 +151,10 @@ export default function AdminProducts() {
     });
     setImages([]);
     setActiveTab("list");
-    fetchProducts();
+    fetchProducts(page);
   };
 
-  // Xóa sản phẩm
+  // Delete product
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
     const res = await fetch(`http://localhost:5000/admin/products/${id}`, {
@@ -163,10 +166,10 @@ export default function AdminProducts() {
       return alert(err.error);
     }
     alert("Xóa sản phẩm thành công!");
-    fetchProducts();
+    fetchProducts(page);
   };
 
-  // Sửa sản phẩm
+  // Edit product
   const handleEdit = (p) => {
     setForm({
       id: p.id,
@@ -203,7 +206,13 @@ export default function AdminProducts() {
   };
   const closeModal = () => setModalOpen(false);
 
-  // Form render
+  const openDetail = (p) => {
+    setDetailProduct(p);
+    setDetailOpen(true);
+  };
+  const closeDetail = () => setDetailOpen(false);
+
+  // Render form
   const renderForm = () => (
     <form onSubmit={handleSubmit}>
       <div className="row mb-3">
@@ -288,21 +297,8 @@ export default function AdminProducts() {
       <h5>Thông số kỹ thuật</h5>
       <div className="row mb-3">
         {[
-          "CPU",
-          "RAM",
-          "Bộ nhớ",
-          "Màn hình",
-          "Pin",
-          "Hệ điều hành",
-          "Camera trước",
-          "Camera sau",
-          "Trọng lượng",
-          "Màu sắc",
-          "Kích thước",
-          "Ngày sản xuất",
-          "Thẻ đồ họa",
-          "Cổng",
-          "Bảo hành",
+          "cpu","ram","storage","screen","battery","os","camera_front","camera_rear",
+          "weight","color","dimensions","release_date","graphics_card","ports","warranty"
         ].map((f) => (
           <div className="col-md-3 mb-2" key={f}>
             <input
@@ -347,6 +343,8 @@ export default function AdminProducts() {
               price: "",
               brand_id: "",
               category_id: "",
+              cost_price: "",
+              stock: "",
               cpu: "",
               ram: "",
               storage: "",
@@ -393,32 +391,12 @@ export default function AdminProducts() {
                   <td>{p.brand}</td>
                   <td>{p.category}</td>
                   <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
                       {p.images && p.images.length > 0 && (
                         <>
-                          <img
-                            src={p.images[0]}
-                            alt={p.name}
-                            style={{
-                              width: "80px",
-                              height: "50px",
-                              objectFit: "cover",
-                              borderRadius: "4px",
-                            }}
-                          />
+                          <img src={p.images[0]} alt={p.name} style={{ width: "80px", height: "50px", objectFit: "cover", borderRadius: "4px" }} />
                           {p.images.length > 1 && (
-                            <button
-                              className="btn btn-sm btn-outline-primary"
-                              onClick={() => openModal(p.name, p.images)}
-                            >
+                            <button className="btn btn-sm btn-outline-primary" onClick={() => openModal(p.name, p.images)}>
                               Xem tất cả ({p.images.length})
                             </button>
                           )}
@@ -427,23 +405,48 @@ export default function AdminProducts() {
                     </div>
                   </td>
                   <td>
-                    <button
-                        className="btn btn-sm btn-info me-2"
-                        onClick={() => openDetail(p)}
-                     >
-                        Chi tiết
-                    </button>
-                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}>
-                      Sửa
-                    </button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)}>
-                      Xóa
-                    </button>
+                    <button className="btn btn-sm btn-info me-2" onClick={() => openDetail(p)}>Chi tiết</button>
+                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}>Sửa</button>
+                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)}>Xóa</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {/* Pagination */}
+<div className="d-flex justify-content-center mt-4">
+  <button
+    className="btn btn-sm btn-outline-secondary me-2"
+    onClick={() => setPage(page - 1)}
+    disabled={page === 1}
+  >
+    Trước
+  </button>
+
+  {Array.from({ length: totalPages }, (_, i) => {
+    const pageNumber = i + 1;
+    return (
+      <button
+        key={pageNumber}
+        className={`btn btn-sm me-2 ${page === pageNumber ? "btn-dark" : "btn-outline-secondary"}`}
+        onClick={() => setPage(pageNumber)}
+      >
+        {pageNumber}
+      </button>
+    );
+  })}
+
+  <button
+    className="btn btn-sm btn-outline-secondary me-2"
+    onClick={() => setPage(page + 1)}
+    disabled={page === totalPages}
+  >
+    Sau
+  </button>
+</div>
+
         </>
       )}
 
@@ -461,147 +464,54 @@ export default function AdminProducts() {
         </>
       )}
 
-      {/* Modal */}
-      {/* Modal */}
-{modalOpen && (
-  <div
-    className="modal-backdrop"
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 9999,
-    }}
-    onClick={closeModal}
-  >
-    <div
-      className="modal-content"
-      style={{
-        backgroundColor: "#fff",
-        padding: "20px",
-        borderRadius: "8px",
-        maxWidth: "80%",
-        maxHeight: "80%",
-        overflowY: "auto",
-        position: "relative",
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h5>{modalTitle} - Tất cả ảnh</h5>
-      <button
-        onClick={closeModal}
-        style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          border: "none",
-          background: "transparent",
-          fontSize: "20px",
-          cursor: "pointer",
-        }}
-      >
-        ×
-      </button>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-          justifyContent: "center",
-        }}
-      >
-        {modalImages.map((img, idx) => (
-          <img
-            key={idx}
-            src={img}
-            alt={`${modalTitle}-${idx}`}
-            style={{
-              width: "150px",
-              height: "100px",
-              objectFit: "cover",
-              borderRadius: "4px",
-              transition: "transform 0.3s ease",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          />
-        ))}
-      </div>
-    </div>
-  </div>
-)}
-{detailOpen && detailProduct && (
-  <div
-    className="modal-backdrop"
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10000,
-    }}
-    onClick={closeDetail}
-  >
-    <div
-      className="modal-content"
-      style={{
-        backgroundColor: "#fff",
-        padding: "20px",
-        borderRadius: "8px",
-        maxWidth: "700px",
-        maxHeight: "80%",
-        overflowY: "auto",
-        position: "relative",
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h5>Chi tiết sản phẩm - {detailProduct.name}</h5>
-      <button
-        onClick={closeDetail}
-        style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          border: "none",
-          background: "transparent",
-          fontSize: "20px",
-          cursor: "pointer",
-        }}
-      >
-        ×
-      </button>
+      {/* Modal images */}
+      {modalOpen && (
+        <div
+          className="modal-backdrop"
+          style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
+          onClick={closeModal}
+        >
+          <div
+            className="modal-content"
+            style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "8px", maxWidth: "80%", maxHeight: "80%", overflowY: "auto", position: "relative" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h5>{modalTitle} - Tất cả ảnh</h5>
+            <button onClick={closeModal} style={{ position: "absolute", top: "10px", right: "10px", border: "none", background: "transparent", fontSize: "20px", cursor: "pointer" }}>×</button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
+              {modalImages.map((img, idx) => (
+                <img key={idx} src={img} alt={`${modalTitle}-${idx}`} style={{ width: "150px", height: "100px", objectFit: "cover", borderRadius: "4px", transition: "transform 0.3s ease", cursor: "pointer" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-      <table className="table table-bordered mt-3">
-        <tbody>
-          {Object.entries(detailProduct).map(([key, value]) => {
-            if (key === "images") return null; // bỏ qua ảnh
-            return (
-              <tr key={key}>
-                <th style={{ width: "30%" }}>{key}</th>
-                <td>{value || "-"}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
-
-
-
+      {/* Modal detail */}
+      {detailOpen && detailProduct && (
+        <div className="modal-backdrop" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }} onClick={closeDetail}>
+          <div className="modal-content" style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "8px", maxWidth: "700px", maxHeight: "80%", overflowY: "auto", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+            <h5>Chi tiết sản phẩm - {detailProduct.name}</h5>
+            <button onClick={closeDetail} style={{ position: "absolute", top: "10px", right: "10px", border: "none", background: "transparent", fontSize: "20px", cursor: "pointer" }}>×</button>
+            <table className="table table-bordered mt-3">
+              <tbody>
+                {Object.entries(detailProduct).map(([key, value]) => {
+                  if (key === "images") return null;
+                  return (
+                    <tr key={key}>
+                      <th style={{ width: "30%" }}>{key}</th>
+                      <td>{value || "-"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
