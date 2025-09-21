@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
-  const [toast, setToast] = useState(null); // { msg, type }
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const perPage = 10;
@@ -12,24 +13,25 @@ export default function AdminOrders() {
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
 
-
+  // Hiển thị toast giống StockIn
   const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    if (type === "success") toast.success(msg, { position: "top-right", autoClose: 3000 });
+    else toast.error(msg, { position: "top-right", autoClose: 3000 });
   };
 
   // Lấy danh sách đơn hàng có phân trang
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/admin/orders?page=${page}&per_page=${perPage}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `http://localhost:5000/admin/orders?page=${page}&per_page=${perPage}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setOrders(res.data.orders);
         setPages(res.data.pages);
       } catch (err) {
         console.error(err);
-        showToast("Lỗi khi tải danh sách đơn hàng", "danger");
+        showToast("Lỗi khi tải danh sách đơn hàng", "error");
       }
     };
     fetchOrders();
@@ -46,11 +48,10 @@ export default function AdminOrders() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
-
       showToast("Cập nhật trạng thái thanh toán thành công!", "success");
     } catch (err) {
       console.error(err);
-      showToast("Cập nhật trạng thái thanh toán thất bại!", "danger");
+      showToast("Cập nhật trạng thái thanh toán thất bại!", "error");
     }
   };
 
@@ -65,11 +66,10 @@ export default function AdminOrders() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, delivery_status: newStatus } : o))
       );
-
       showToast("Cập nhật trạng thái giao hàng thành công!", "success");
     } catch (err) {
       console.error(err);
-      showToast("Cập nhật trạng thái thất bại!", "danger");
+      showToast("Cập nhật trạng thái thất bại!", "error");
     }
   };
 
@@ -77,23 +77,8 @@ export default function AdminOrders() {
     <div className="container my-4">
       <h2 className="mb-4">Danh sách đơn hàng</h2>
 
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`toast show position-fixed top-0 end-0 m-3 text-white border-0 ${toast.type === "success" ? "bg-success" : "bg-danger"}`}
-          role="alert"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="d-flex">
-            <div className="toast-body">{toast.msg}</div>
-            <button
-              type="button"
-              className="btn-close btn-close-white me-2 m-auto"
-              onClick={() => setToast(null)}
-            ></button>
-          </div>
-        </div>
-      )}
+      {/* ToastContainer */}
+      <ToastContainer position="top-right" autoClose={3000} />
 
       <table className="table table-striped table-bordered">
         <thead className="table-dark">
@@ -121,7 +106,7 @@ export default function AdminOrders() {
               <td>{order.delivery_method}</td>
               <td>{order.items_count}</td>
               <td>
-                {order.status === "CANCELED"|| order.status === "FAILED" ? (
+                {order.status === "CANCELED" || order.status === "FAILED" ? (
                   <span className="text-danger fw-bold">Thất bại</span>
                 ) : (
                   <select
@@ -142,7 +127,9 @@ export default function AdminOrders() {
                   className="form-select form-select-sm"
                   value={order.status || "PENDING"}
                   onChange={(e) => handlePaymentStatusChange(order.id, e.target.value)}
-                  disabled={order.status === "PAID" || order.status === "FAILED" || order.status === "CANCELED"}
+                  disabled={
+                    order.status === "PAID" || order.status === "FAILED" || order.status === "CANCELED"
+                  }
                 >
                   <option value="PENDING">Chưa thanh toán</option>
                   <option value="PAID">Đã thanh toán</option>

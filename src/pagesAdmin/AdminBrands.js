@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { BiTrash, BiEdit } from "react-icons/bi";
+import ConfirmModal from "../components/ConfirmModal"; // đường dẫn đến ConfirmModal
 
 export default function AdminBrands() {
   const [brands, setBrands] = useState([]);
@@ -6,20 +10,26 @@ export default function AdminBrands() {
   const [activeTab, setActiveTab] = useState("list");
   const [page, setPage] = useState(1);
   const perPage = 8;
-  const [toast, setToast] = useState(null); // {msg,type}
   const token = localStorage.getItem("adminToken");
 
+  // Modal xóa
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
   const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    if (type === "success") toast.success(msg, { position: "top-right", autoClose: 3000 });
+    else toast.error(msg, { position: "top-right", autoClose: 3000 });
   };
 
   const fetchBrands = async () => {
-    const res = await fetch("http://localhost:5000/brands");
-    if (res.ok) {
+    try {
+      const res = await fetch("http://localhost:5000/brands");
+      if (!res.ok) throw new Error("Lỗi khi tải danh sách thương hiệu");
       const data = await res.json();
       setBrands(data);
       setPage(1);
+    } catch (err) {
+      showToast(err.message, "error");
     }
   };
 
@@ -44,20 +54,23 @@ export default function AdminBrands() {
         const err = await res.json();
         throw new Error(err.error);
       }
-
-      showToast(form.id ? "Cập nhật brand thành công!" : "Thêm brand thành công!", "success");
+      showToast(form.id ? "Cập nhật thương hiệu thành công!" : "Thêm thương hiệu thành công!", "success");
       setForm({ id: null, name: "" });
       setActiveTab("list");
       fetchBrands();
     } catch (err) {
-      showToast(err.message || "Lỗi hệ thống!", "danger");
+      showToast(err.message || "Lỗi hệ thống!", "error");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa brand này?")) return;
+  const handleDelete = (id) => {
+    setDeleteId(id);
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/admin/brands/${id}`, {
+      const res = await fetch(`http://localhost:5000/admin/brands/${deleteId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -65,11 +78,19 @@ export default function AdminBrands() {
         const err = await res.json();
         throw new Error(err.error);
       }
-      showToast("Xóa brand thành công!", "success");
+      showToast("Xóa thương hiệu thành công!", "success");
       fetchBrands();
     } catch (err) {
-      showToast(err.message || "Xóa thất bại!", "danger");
+      showToast(err.message || "Xóa thất bại!", "error");
+    } finally {
+      setShowConfirm(false);
+      setDeleteId(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowConfirm(false);
+    setDeleteId(null);
   };
 
   // Phân trang frontend
@@ -78,25 +99,9 @@ export default function AdminBrands() {
 
   return (
     <div className="container mt-5">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`toast show position-fixed top-0 end-0 m-3 text-white border-0 ${toast.type === "success" ? "bg-success" : "bg-danger"}`}
-          role="alert"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="d-flex">
-            <div className="toast-body">{toast.msg}</div>
-            <button
-              type="button"
-              className="btn-close btn-close-white me-2 m-auto"
-              onClick={() => setToast(null)}
-            ></button>
-          </div>
-        </div>
-      )}
+      <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Tab */}
+      {/* Tabs */}
       <div className="mb-3">
         <button className={`btn me-2 ${activeTab==="list"?"btn-primary":"btn-outline-primary"}`}
           onClick={() => setActiveTab("list")}>Danh sách thương hiệu</button>
@@ -119,15 +124,15 @@ export default function AdminBrands() {
                   <td>{b.name}</td>
                   <td>
                     <button className="btn btn-sm btn-warning me-2"
-                      onClick={() => { setForm(b); setActiveTab("edit"); }}>Sửa</button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(b.id)}>Xóa</button>
+                      onClick={() => { setForm(b); setActiveTab("edit"); }}><BiEdit /></button>
+                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(b.id)}><BiTrash /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Pagination giống AdminOrders */}
+          {/* Pagination */}
           <div className="d-flex justify-content-center mt-4">
             <nav>
               <ul className="pagination">
@@ -159,16 +164,24 @@ export default function AdminBrands() {
       {/* Add/Edit */}
       {(activeTab==="add" || activeTab==="edit") && (
         <>
-          <h3>{form.id ? "Chỉnh sửa" : "Thêm"} brand</h3>
+          <h3>{form.id ? "Chỉnh sửa thương hiệu" : "Thêm thương hiệu"} </h3>
           <form onSubmit={handleSubmit}>
             <input name="name" value={form.name} onChange={handleChange}
-              placeholder="Tên brand" className="form-control mb-3" required />
+              placeholder="Tên thương hiệu" className="form-control mb-3" required />
             <button type="submit" className="btn btn-primary">
               {form.id ? "Cập nhật" : "Thêm mới"}
             </button>
           </form>
         </>
       )}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        show={showConfirm}
+        message="Bạn có chắc chắn muốn xóa thương hiệu này?"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }

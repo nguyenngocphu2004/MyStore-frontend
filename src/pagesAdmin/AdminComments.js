@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ConfirmModal from "../components/ConfirmModal";
+import {BiTrash, BiEdit } from "react-icons/bi";
 
 function AdminComments() {
   const [comments, setComments] = useState([]);
@@ -14,6 +18,9 @@ function AdminComments() {
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [replyInput, setReplyInput] = useState("");
 
+  // State để quản lý xác nhận xóa
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
   useEffect(() => {
     axios
       .get("http://localhost:5000/admin/comments", {
@@ -26,22 +33,21 @@ function AdminComments() {
       .catch((err) => {
         console.error("Error fetching comments:", err);
         setLoading(false);
+        toast.error("Không thể tải danh sách bình luận.");
       });
   }, [token]);
 
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
-
     try {
       await axios.delete(`http://localhost:5000/admin/comments/${commentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       setComments((prev) => prev.filter((c) => c.id !== commentId));
-      alert("Xóa bình luận thành công.");
+      toast.success("Xóa bình luận thành công.");
     } catch (err) {
       console.error("Lỗi khi xóa bình luận:", err);
-      alert("Xóa bình luận thất bại.");
+      toast.error("Xóa bình luận thất bại.");
     }
   };
 
@@ -72,10 +78,10 @@ function AdminComments() {
       );
       setEditingReplyId(null);
       setReplyInput("");
-      alert("Cập nhật trả lời thành công.");
+      toast.success("Cập nhật trả lời thành công.");
     } catch (err) {
       console.error("Lỗi khi cập nhật trả lời:", err);
-      alert("Cập nhật trả lời thất bại.");
+      toast.error("Cập nhật trả lời thất bại.");
     }
   };
 
@@ -105,50 +111,58 @@ function AdminComments() {
 
   return (
     <div className="p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
+
       <h3 className="mb-4 font-bold">Quản lý bình luận</h3>
-        {totalPages > 1 && (
-      <div className="d-flex justify-content-center mb-4">
-        <nav>
-          <ul className="pagination">
-            <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-              <button
-                className="btn btn-sm btn-outline-secondary me-2"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-              >
-                Trước
-              </button>
-            </li>
 
-            {[...Array(totalPages)].map((_, idx) => {
-              const pageNumber = idx + 1;
-              return (
-                <li key={idx} className="page-item">
-                  <button
-                    className={`btn btn-sm me-2 ${
-                      page === pageNumber ? "btn-dark" : "btn-outline-secondary"
-                    }`}
-                    onClick={() => setPage(pageNumber)}
-                  >
-                    {pageNumber}
-                  </button>
-                </li>
-              );
-            })}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center mb-4">
+          <nav>
+            <ul className="pagination">
+              <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+                <button
+                  className="btn btn-sm btn-outline-secondary me-2"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Trước
+                </button>
+              </li>
 
-            <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
-              <button
-                className="btn btn-sm btn-outline-secondary me-2"
-                onClick={() => setPage(page + 1)}
-                disabled={page === totalPages}
+              {[...Array(totalPages)].map((_, idx) => {
+                const pageNumber = idx + 1;
+                return (
+                  <li key={idx} className="page-item">
+                    <button
+                      className={`btn btn-sm me-2 ${
+                        page === pageNumber
+                          ? "btn-dark"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => setPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  </li>
+                );
+              })}
+
+              <li
+                className={`page-item ${page === totalPages ? "disabled" : ""}`}
               >
-                Sau
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    )}
+                <button
+                  className="btn btn-sm btn-outline-secondary me-2"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  Sau
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
+
       {currentProducts.length === 0 ? (
         <p className="text-center">Chưa có bình luận nào</p>
       ) : (
@@ -163,7 +177,11 @@ function AdminComments() {
                   <img
                     src={group.product_image}
                     alt={group.product_name}
-                    style={{ width: "60px", height: "60px", objectFit: "cover" }}
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      objectFit: "cover",
+                    }}
                     className="rounded border"
                   />
                 ) : (
@@ -225,7 +243,7 @@ function AdminComments() {
                               className="btn btn-sm btn-outline-primary ms-2"
                               onClick={() => handleStartEditReply(c)}
                             >
-                              Sửa
+                              <BiEdit/>
                             </button>
                           </p>
                         ) : (
@@ -240,9 +258,9 @@ function AdminComments() {
 
                       <button
                         className="btn btn-sm btn-danger ms-3"
-                        onClick={() => handleDeleteComment(c.id)}
+                        onClick={() => setConfirmDeleteId(c.id)}
                       >
-                        Xóa
+                        <BiTrash />
                       </button>
                     </div>
                   ))}
@@ -253,7 +271,16 @@ function AdminComments() {
         ))
       )}
 
-
+      {/* Confirm Modal */}
+      <ConfirmModal
+        show={confirmDeleteId !== null}
+        message="Bạn có chắc muốn xóa bình luận này?"
+        onConfirm={() => {
+          handleDeleteComment(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

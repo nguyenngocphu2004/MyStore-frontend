@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
-
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
@@ -13,32 +14,27 @@ function Profile() {
   const [successMsg, setSuccessMsg] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+
   const [confirmData, setConfirmData] = useState({
-  show: false,
-  message: "",
-  onConfirm: null,
-  onCancel: null,
-});
-
-const openConfirm = (message, onConfirm) => {
-  setConfirmData({
-    show: true,
-    message,
-    onConfirm: () => {
-      onConfirm();
-      setConfirmData({ ...confirmData, show: false });
-    },
-    onCancel: () => setConfirmData({ ...confirmData, show: false }),
+    show: false,
+    message: "",
+    onConfirm: null,
+    onCancel: null,
   });
-};
 
-  const showNotification = (msg) => {
-  setNotification(msg);
-  setTimeout(() => setNotification(null), 3000); // 3 giây ẩn
-};
+  const openConfirm = (message, onConfirm) => {
+    setConfirmData({
+      show: true,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmData({ ...confirmData, show: false });
+      },
+      onCancel: () => setConfirmData({ ...confirmData, show: false }),
+    });
+  };
 
   const DELIVERY_TEXT = {
     PENDING: "Chờ xác nhận",
@@ -94,32 +90,42 @@ const openConfirm = (message, onConfirm) => {
   };
 
   const handleConfirmReceived = (orderId) => {
-  openConfirm("Bạn chắc chắn đã nhận được hàng?", () => {
-    fetch(`http://localhost:5000/orders/${orderId}/confirm_received`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok) throw new Error("Cập nhật thất bại");
-        return res.json();
+    openConfirm("Bạn chắc chắn đã nhận được hàng?", () => {
+      fetch(`http://localhost:5000/orders/${orderId}/confirm_received`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
+        .then(res => {
+          if (!res.ok) throw new Error("Cập nhật thất bại");
+          return res.json();
+        })
+        .then(() => {
+          toast.success("Nhận hàng thành công!");
+          fetchOrders();
+        })
+        .catch(err => toast.error(err.message));
+    });
+  };
 
-      .then(() => {
-        showNotification("Nhận hàng thành công!");
-        fetchOrders();
+  const handleCancelOrder = (orderId) => {
+    openConfirm("Bạn chắc chắn muốn hủy đơn hàng này?", () => {
+      fetch(`http://localhost:5000/orders/${orderId}/cancel`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .catch(err => showNotification(err.message));
-  });
-};
-
-
-  useEffect(() => {
-    fetchProfile();
-    fetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        .then(res => {
+          if (!res.ok) throw new Error("Hủy đơn hàng thất bại");
+          return res.json();
+        })
+        .then(() => {
+          toast.success("Đã hủy đơn hàng");
+          fetchOrders();
+        })
+        .catch(err => toast.error(err.message));
+    });
+  };
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -128,26 +134,6 @@ const openConfirm = (message, onConfirm) => {
     setSuccessMsg(null);
     setError(null);
   };
- const handleCancelOrder = (orderId) => {
-  openConfirm("Bạn chắc chắn muốn hủy đơn hàng này?", () => {
-    fetch(`http://localhost:5000/orders/${orderId}/cancel`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Hủy đơn hàng thất bại");
-        return res.json();
-      })
-      .then(() => {
-        showNotification("Đã hủy đơn hàng");
-        fetchOrders();
-      })
-      .catch((err) => showNotification(err.message));
-  });
-};
-
 
   const handleCancel = () => {
     setEditing(false);
@@ -185,11 +171,17 @@ const openConfirm = (message, onConfirm) => {
       .then(() => {
         setProfile({ ...profile, ...form });
         setEditing(false);
-        setSuccessMsg("Cập nhật thành công!");
+        toast.success("Cập nhật hồ sơ thành công!");
       })
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
       .finally(() => setLoading(false));
   };
+
+  useEffect(() => {
+    fetchProfile();
+    fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!profile) {
     return (
@@ -202,105 +194,70 @@ const openConfirm = (message, onConfirm) => {
   }
 
   return (
-   <>
-   <ConfirmModal
-  show={confirmData.show}
-  message={confirmData.message}
-  onConfirm={confirmData.onConfirm}
-  onCancel={confirmData.onCancel}
-/>
+    <>
+      {/* Toast container */}
+      <ToastContainer position="top-right" autoClose={3000} />
 
-      {notification && (
-        <div
-          style={{
-            position: "fixed",
-            top: 20,
-            right: 20,
-            backgroundColor: "#facc15",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "5px",
-            boxShadow: "0 0 10px rgba(0,0,0,0.3)",
-            zIndex: 9999,
-          }}
-        >
-          {notification}
-        </div>
-      )}
-    <div className="container my-5">
-      <div className="row">
-        {/* Hồ sơ */}
-        <div className="col-md-5 mb-4">
-          <div className="card shadow-sm rounded-4 border-0">
-            <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Thông tin hồ sơ</h5>
-              {!editing && (
-                <button className="btn btn-sm btn-outline-light" onClick={handleEditClick}>
-                  Chỉnh sửa
-                </button>
-              )}
-            </div>
-            <div className="card-body">
-              {successMsg && <div className="alert alert-success">{successMsg}</div>}
-              {error && editing && <div className="alert alert-danger">{error}</div>}
-              {!editing ? (
-                <>
-                  <p><strong>Tên đăng nhập:</strong> {profile.username}</p>
-                  <p><strong>Email:</strong> {profile.email}</p>
-                  <p><strong>Số điện thoại:</strong> {profile.phone || "Chưa có"}</p>
-                </>
-              ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!loading) handleSave();
-                  }}
-                >
-                  <div className="mb-3">
-                    <label className="form-label">Tên đăng nhập</label>
-                    <input
-                      name="username"
-                      className="form-control"
-                      value={form.username}
-                      disabled
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input
-                      name="email"
-                      type="email"
-                      className="form-control"
-                      value={form.email}
-                      onChange={handleChange}
-                      disabled={loading}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Số điện thoại</label>
-                    <input
-                      name="phone"
-                      className="form-control"
-                      value={form.phone}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={handleCancel} disabled={loading}>
-                      Hủy
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                      {loading ? "Đang lưu..." : "Lưu thay đổi"}
-                    </button>
-                  </div>
-                </form>
-              )}
+      {/* Confirm modal */}
+      <ConfirmModal
+        show={confirmData.show}
+        message={confirmData.message}
+        onConfirm={confirmData.onConfirm}
+        onCancel={confirmData.onCancel}
+      />
+
+      <div className="container my-5">
+        <div className="row">
+          {/* Hồ sơ */}
+          <div className="col-md-5 mb-4">
+            <div className="card shadow-sm rounded-4 border-0">
+              <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">Thông tin hồ sơ</h5>
+                {!editing && (
+                  <button className="btn btn-sm btn-outline-light" onClick={handleEditClick}>
+                    Chỉnh sửa
+                  </button>
+                )}
+              </div>
+              <div className="card-body">
+                {!editing ? (
+                  <>
+                    <p><strong>Tên đăng nhập:</strong> {profile.username}</p>
+                    <p><strong>Email:</strong> {profile.email}</p>
+                    <p><strong>Số điện thoại:</strong> {profile.phone || "Chưa có"}</p>
+                  </>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!loading) handleSave();
+                    }}
+                  >
+                    <div className="mb-3">
+                      <label className="form-label">Tên đăng nhập</label>
+                      <input name="username" className="form-control" value={form.username} disabled />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Email</label>
+                      <input name="email" type="email" className="form-control" value={form.email} onChange={handleChange} disabled={loading} required />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Số điện thoại</label>
+                      <input name="phone" className="form-control" value={form.phone} onChange={handleChange} disabled={loading} />
+                    </div>
+                    <div className="d-flex justify-content-end gap-2">
+                      <button type="button" className="btn btn-secondary" onClick={handleCancel} disabled={loading}>
+                        Hủy
+                      </button>
+                      <button type="submit" className="btn btn-primary" disabled={loading}>
+                        {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-
         {/* Đơn hàng */}
         <div className="col-md-7">
           <div className="card shadow-sm rounded-4 border-0">

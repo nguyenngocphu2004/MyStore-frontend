@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -9,7 +11,7 @@ import {
   FaStar,
   FaStarHalfAlt,
   FaRegStar,
-  FaThumbsUp
+  FaThumbsUp,
 } from "react-icons/fa";
 
 function ProductDetail() {
@@ -17,7 +19,6 @@ function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [adding, setAdding] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showAllSpecs, setShowAllSpecs] = useState(false);
   const [fade, setFade] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -26,18 +27,28 @@ function ProductDetail() {
   const [rating, setRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
   const [visibleCount, setVisibleCount] = useState(5);
-
-  // 🔹 reply state
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [userRole, setUserRole] = useState(null);
-  const [message, setMessage] = useState(null);
-  // Lấy role user (lưu ở localStorage khi login)
+  const [showAllSpecs, setShowAllSpecs] = useState(false);
+  const [added, setAdded] = useState(false);
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
     if (storedRole) setUserRole(storedRole);
   }, []);
 
+  // Lấy chi tiết sản phẩm
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/products/${id}`)
+      .then((res) => {
+        setProduct(res.data);
+        setCurrentIndex(0);
+      })
+      .catch((err) => toast.error("Lỗi khi lấy chi tiết sản phẩm"));
+  }, [id]);
+
+  // Lấy bình luận
   useEffect(() => {
     axios
       .get(`http://localhost:5000/products/${id}/comments`)
@@ -48,14 +59,41 @@ function ProductDetail() {
       .catch(() => setComments([]));
   }, [id]);
 
-  // Gửi bình luận
+  // Slide ảnh
+  const handleNext = useCallback(() => {
+    setFade(true);
+    setTimeout(() => {
+      setCurrentIndex((prev) =>
+        prev === product.images.length - 1 ? 0 : prev + 1
+      );
+      setFade(false);
+    }, 500);
+  }, [product]);
+
+  const handlePrev = () => {
+    setFade(true);
+    setTimeout(() => {
+      setCurrentIndex((prev) =>
+        prev === 0 ? product.images.length - 1 : prev - 1
+      );
+      setFade(false);
+    }, 500);
+  };
+
+  useEffect(() => {
+    if (product && product.images.length > 1) {
+      const interval = setInterval(() => handleNext(), 10000);
+      return () => clearInterval(interval);
+    }
+  }, [product, currentIndex, handleNext]);
+
+  // ------------------- Bình luận -------------------
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || rating === 0) {
-      setMessage({ type: "warning", text: "Vui lòng nhập bình luận và chọn số sao" });
+      toast.warning("Vui lòng nhập bình luận và chọn số sao");
       return;
     }
-
     try {
       const payload = token
         ? { content: newComment, rating }
@@ -65,38 +103,33 @@ function ProductDetail() {
             guest_name: guestInfo.name,
             guest_phone: guestInfo.phone,
           };
-
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.post(
         `http://localhost:5000/products/${id}/comments`,
         payload,
         { headers }
       );
-
       setComments((prev) => [...prev, res.data.comment]);
       setNewComment("");
       setGuestInfo({ name: "", phone: "" });
       setRating(0);
+      toast.success("Gửi bình luận thành công!");
     } catch (err) {
-      setMessage({ type: "warning", text: err.response?.data?.error || "Lỗi khi gửi bình luận" });
+      toast.error(err.response?.data?.error || "Lỗi khi gửi bình luận");
     }
   };
 
-  // Gửi reply (chỉ Admin)
   const handleReplySubmit = async (commentId) => {
     if (!replyContent.trim()) {
-      setMessage({ type: "warning", text: "Vui lòng nhập nội dung trả lời" });
-
+      toast.warning("Vui lòng nhập nội dung trả lời");
       return;
     }
-
     try {
       const res = await axios.post(
         `http://localhost:5000/comments/${commentId}/reply`,
         { content: replyContent },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setComments((prev) =>
         prev.map((cmt) =>
           cmt.id === commentId
@@ -108,61 +141,14 @@ function ProductDetail() {
             : cmt
         )
       );
-
       setReplyingTo(null);
       setReplyContent("");
+      toast.success("Trả lời bình luận thành công!");
     } catch (err) {
-      setMessage({ type: "warning", text: err.response?.data?.error || "Lỗi khi trả lời bình luận" });
+      toast.error(err.response?.data?.error || "Lỗi khi trả lời bình luận");
     }
   };
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:5000/products/${id}`)
-      .then((res) => {
-        setProduct(res.data);
-        setCurrentIndex(0);
-      })
-      .catch((err) => console.error("Lỗi khi lấy chi tiết sản phẩm:", err));
-  }, [id]);
-
-  const handleNext = useCallback(() => {
-    setFade(true);
-    setTimeout(() => {
-      setCurrentIndex((prev) =>
-        prev === product.images.length - 1 ? 0 : prev + 1
-      );
-      setFade(false);
-    }, 500);
-  }, [product]);
-
-  // Auto chuyển ảnh sau 10 giây
-  useEffect(() => {
-    if (product && product.images && product.images.length > 1) {
-      const interval = setInterval(() => {
-        handleNext();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [product, currentIndex, handleNext]);
-
-  const handlePrev = () => {
-    setFade(true);
-    setTimeout(() => {
-      setCurrentIndex((prev) =>
-        prev === 0 ? product.images.length - 1 : prev - 1
-      );
-      setFade(false);
-    }, 500);
-  };
-    useEffect(() => {
-  if (message) {
-    const timer = setTimeout(() => setMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }
-}, [message]);
-
-  // Vote comment
   const handleVote = async (commentId, action) => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -171,41 +157,24 @@ function ProductDetail() {
         { action },
         { headers, withCredentials: true }
       );
-
       setComments((prev) =>
         prev.map((cmt) =>
           cmt.id === commentId ? { ...cmt, likes: res.data.likes } : cmt
         )
       );
+      toast.success("Bạn đã like bình luận!");
     } catch (err) {
-      setMessage({ type: "warning", text: err.response?.data?.error || "Lỗi khi vote" });
+      toast.error(err.response?.data?.error || "Lỗi khi vote");
     }
   };
 
+  // ------------------- Thêm vào giỏ -------------------
   const handleAddToCart = async () => {
     if (!token) {
-      setMessage({ type: "warning", text: "Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng" });
-
+      toast.warning("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng");
       return;
     }
-
     setAdding(true);
-  const cartIcon = document.querySelector(".cart-icon"); // header cart button cần thêm class này
-  const productImg = document.querySelector(".img-fluid"); // ảnh sản phẩm chính
-  if (productImg && cartIcon) {
-    const imgRect = productImg.getBoundingClientRect();
-    const cartRect = cartIcon.getBoundingClientRect();
-    const flyingImg = productImg.cloneNode(true);
-    flyingImg.style.left = `${imgRect.left}px`;
-    flyingImg.style.top = `${imgRect.top}px`;
-    flyingImg.classList.add("flying-img");
-
-    // Tính toán vị trí cuối (tính offset)
-    flyingImg.style.setProperty("--x", `${cartRect.left - imgRect.left}px`);
-    flyingImg.style.setProperty("--y", `${cartRect.top - imgRect.top}px`);
-
-    document.body.appendChild(flyingImg);
-  }
     try {
       await axios.post(
         "http://localhost:5000/cart/add",
@@ -213,18 +182,14 @@ function ProductDetail() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       window.dispatchEvent(new Event("cartUpdated"));
-    } catch (error) {
-      console.error("Lỗi khi thêm vào giỏ hàng:", error);
-      if (error.response?.status === 401) {
-        setMessage({ type: "warning", text: "Bạn cần đăng nhập lại!" });
-      } else {
-        setMessage({ type: "warning", text: "Thêm vào giỏ hàng thất bại!" });
-      }
+      toast.success("Thêm vào giỏ hàng thành công!");
+      setAdded(true);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Thêm vào giỏ hàng thất bại!");
     } finally {
       setAdding(false);
     }
   };
-
 
   if (!product) return <p>Đang tải...</p>;
 
@@ -250,38 +215,19 @@ function ProductDetail() {
 
   return (
     <div className="container py-4">
-{message && (
-  <div className="toast-container">
-    <div className="toast-box">
-      {message.text}
-    </div>
-  </div>
-)}
-
+      <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="row">
         {/* Ảnh sản phẩm */}
         <div className="col-md-5 text-center">
-          <div
-            className="position-relative"
-            style={{ maxWidth: "400px", margin: "0 auto" }}
-          >
+          <div className="position-relative" style={{ maxWidth: "400px", margin: "0 auto" }}>
             <img
               src={product.images[currentIndex]}
               alt={product.name}
-              className={`img-fluid fade-image ${
-                fade ? "fade-out" : "fade-in"
-              }`}
-              style={{
-                borderRadius: "8px",
-                maxHeight: "400px",
-                objectFit: "contain",
-              }}
+              className={`img-fluid fade-image ${fade ? "fade-out" : "fade-in"}`}
+              style={{ borderRadius: "8px", maxHeight: "400px", objectFit: "contain" }}
             />
-            <button
-              onClick={handlePrev}
-              className="btn shadow-sm"
-              style={{
+            <button onClick={handlePrev} className="btn shadow-sm" style={{
                 position: "absolute",
                 left: "-50px",
                 top: "50%",
@@ -289,16 +235,12 @@ function ProductDetail() {
                 borderRadius: "50%",
                 width: "40px",
                 height: "40px",
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                backgroundColor: "rgba(255,255,255,0.9)",
                 border: "1px solid #ddd",
-              }}
-            >
+              }}>
               <FaChevronLeft />
             </button>
-            <button
-              onClick={handleNext}
-              className="btn shadow-sm"
-              style={{
+            <button onClick={handleNext} className="btn shadow-sm" style={{
                 position: "absolute",
                 right: "-50px",
                 top: "50%",
@@ -306,216 +248,116 @@ function ProductDetail() {
                 borderRadius: "50%",
                 width: "40px",
                 height: "40px",
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                backgroundColor: "rgba(255,255,255,0.9)",
                 border: "1px solid #ddd",
-              }}
-            >
+              }}>
               <FaChevronRight />
             </button>
           </div>
 
           {/* Thumbnail */}
           <div className="d-flex gap-2 justify-content-center flex-wrap mt-3">
-            {product.images &&
-              product.images.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={img}
-                  alt={`thumb-${idx}`}
-                  className="img-thumbnail"
-                  style={{
-                    width: "70px",
-                    height: "70px",
-                    objectFit: "cover",
-                    cursor: "pointer",
-                    border:
-                      currentIndex === idx ? "2px solid #f60" : "1px solid #ddd",
-                  }}
-                  onClick={() => setCurrentIndex(idx)}
-                />
-              ))}
+            {product.images.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt={`thumb-${idx}`}
+                className="img-thumbnail"
+                style={{
+                  width: "70px",
+                  height: "70px",
+                  objectFit: "cover",
+                  cursor: "pointer",
+                  border: currentIndex === idx ? "2px solid #f60" : "1px solid #ddd",
+                }}
+                onClick={() => setCurrentIndex(idx)}
+              />
+            ))}
           </div>
 
           {/* Bình luận */}
           <div className="mt-4">
             <h3>Đánh giá sản phẩm</h3>
             <div className="d-flex align-items-center mb-2">
-              {[1, 2, 3, 4, 5].map((star) => {
-                if (averageRating >= star) {
-                  return <FaStar key={star} size={20} color="#ffc107" />;
-                } else if (averageRating >= star - 0.5) {
-                  return <FaStarHalfAlt key={star} size={20} color="#ffc107" />;
-                } else {
-                  return <FaRegStar key={star} size={20} color="#e4e5e9" />;
-                }
+              {[1,2,3,4,5].map((star)=> {
+                if (averageRating >= star) return <FaStar key={star} color="#ffc107" />;
+                else if (averageRating >= star-0.5) return <FaStarHalfAlt key={star} color="#ffc107" />;
+                else return <FaRegStar key={star} color="#e4e5e9" />;
               })}
               <span className="ms-2">({averageRating.toFixed(1)})</span>
             </div>
-            <h5>Bình luận</h5>
 
             <ul className="list-group">
-              {comments.slice(0, visibleCount).map((cmt) => (
+              {comments.slice(0, visibleCount).map((cmt)=> (
                 <li key={cmt.id} className="list-group-item">
-                  <div
-                    className="d-flex align-items-center"
-                    style={{ gap: "8px" }}
-                  >
-                    <strong>
-                      {cmt.username || cmt.guest_name || "Ẩn danh"}
-                    </strong>
-                    <span>:</span>
+                  <div className="d-flex align-items-center gap-2">
+                    <strong>{cmt.username || cmt.guest_name || "Ẩn danh"}</strong>:
                     <div className="d-flex align-items-center">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <FaStar
-                          key={star}
-                          size={16}
-                          color={cmt.rating >= star ? "#ffc107" : "#e4e5e9"}
-                        />
+                      {[1,2,3,4,5].map((star)=> (
+                        <FaStar key={star} size={16} color={cmt.rating >= star ? "#ffc107" : "#e4e5e9"} />
                       ))}
                     </div>
                     <span>{cmt.content}</span>
                   </div>
-
-                  <div
-                    className="d-flex align-items-center"
-                    style={{ gap: "10px" }}
-                  >
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => handleVote(cmt.id, "like")}
-                    >
+                  <div className="d-flex align-items-center gap-2 mt-1">
+                    <button className="btn btn-sm btn-outline-primary" onClick={()=> handleVote(cmt.id, "like")}>
                       <FaThumbsUp className="me-1" />({cmt.likes || 0})
                     </button>
                     <small className="text-muted">{cmt.created_at}</small>
                   </div>
 
-                  {/* Nút trả lời chỉ hiện với Admin */}
-                  {(userRole === "ADMIN" || userRole === "STAFF")&& !cmt.admin_reply && (
-                    <button
-                      className="btn btn-sm btn-outline-primary mt-2"
-                      onClick={() => setReplyingTo(cmt.id)}
-                    >
-                      Trả lời
-                    </button>
+                  {(userRole === "ADMIN" || userRole === "STAFF") && !cmt.admin_reply && (
+                    <button className="btn btn-sm btn-outline-primary mt-2" onClick={()=> setReplyingTo(cmt.id)}>Trả lời</button>
                   )}
 
-                  {/* Form trả lời */}
                   {replyingTo === cmt.id && (
                     <div className="mt-2">
-                      <textarea
-                        className="form-control mb-2"
-                        rows="2"
-                        placeholder="Nhập trả lời..."
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                      />
-                      <button
-                        className="btn btn-success btn-sm me-2"
-                        onClick={() => handleReplySubmit(cmt.id)}
-                      >
-                        Gửi
-                      </button>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setReplyingTo(null)}
-                      >
-                        Hủy
-                      </button>
+                      <textarea className="form-control mb-2" rows="2" placeholder="Nhập trả lời..." value={replyContent} onChange={e=> setReplyContent(e.target.value)} />
+                      <button className="btn btn-success btn-sm me-2" onClick={()=> handleReplySubmit(cmt.id)}>Gửi</button>
+                      <button className="btn btn-secondary btn-sm" onClick={()=> setReplyingTo(null)}>Hủy</button>
                     </div>
                   )}
 
-                  {/* Hiển thị replies */}
-                  {/* Hiển thị trả lời của admin (nếu có) */}
                   {cmt.admin_reply && (
-                  <div className="mt-2 ms-4 p-2 border rounded bg-light">
-                    <strong>PhuStore:</strong> {cmt.admin_reply}
-                    <br />
-                    <small className="text-muted">{cmt.reply_at}</small>
-                  </div>
+                    <div className="mt-2 ms-4 p-2 border rounded bg-light">
+                      <strong>PhuStore:</strong> {cmt.admin_reply}<br/>
+                      <small className="text-muted">{cmt.reply_at}</small>
+                    </div>
                   )}
-
                 </li>
               ))}
             </ul>
+
             {visibleCount < comments.length && (
-  <div className="text-center mt-2">
-  <button
-    className="btn btn-link"
-    style={{ textDecoration: "none" }}
-    onClick={() => setVisibleCount(visibleCount + 5)}
-  >
-    Xem thêm bình luận
-  </button>
-</div>
-
-)}
-          </div>
-
-          <form onSubmit={handleSubmitComment} className="comment-form mt-3">
-            {!token && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Họ tên"
-                  className="form-control mb-2"
-                  value={guestInfo.name}
-                  onChange={(e) =>
-                    setGuestInfo({ ...guestInfo, name: e.target.value })
-                  }
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Số điện thoại"
-                  className="form-control mb-2"
-                  value={guestInfo.phone}
-                  onChange={(e) =>
-                    setGuestInfo({ ...guestInfo, phone: e.target.value })
-                  }
-                  required
-                />
-              </>
+              <div className="text-center mt-2">
+                <button className="btn btn-link" style={{ textDecoration: "none" }} onClick={()=> setVisibleCount(visibleCount+5)}>Xem thêm bình luận</button>
+              </div>
             )}
 
-            {/* Chọn số sao */}
-            <div className="mb-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <FaStar
-                  key={star}
-                  size={24}
-                  onClick={() => setRating(star)}
-                  style={{
-                    cursor: "pointer",
-                    color: rating >= star ? "#ffc107" : "#e4e5e9",
-                    marginRight: "4px",
-                  }}
-                />
-              ))}
-            </div>
-            <textarea
-              className="form-control mb-2"
-              placeholder="Nhập bình luận..."
-              rows="3"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              required
-            />
-            <button type="submit" className="btn btn-warning">
-              Gửi bình luận
-            </button>
-          </form>
+            <form onSubmit={handleSubmitComment} className="comment-form mt-3">
+              {!token && <>
+                <input type="text" className="form-control mb-2" placeholder="Họ tên" value={guestInfo.name} onChange={e=> setGuestInfo({...guestInfo, name:e.target.value})} required/>
+                <input type="tel" className="form-control mb-2" placeholder="Số điện thoại" value={guestInfo.phone} onChange={e=> setGuestInfo({...guestInfo, phone:e.target.value})} required/>
+              </>}
+              <div className="mb-2">
+                {[1,2,3,4,5].map(star=> (
+                  <FaStar key={star} size={24} onClick={()=> setRating(star)} style={{ cursor:"pointer", color: rating>=star ? "#ffc107": "#e4e5e9", marginRight:"4px"}}/>
+                ))}
+              </div>
+              <textarea className="form-control mb-2" placeholder="Nhập bình luận..." rows="3" value={newComment} onChange={e=> setNewComment(e.target.value)} required/>
+              <button type="submit" className="btn btn-warning">Gửi bình luận</button>
+            </form>
+          </div>
         </div>
 
         {/* Thông tin sản phẩm */}
         <div className="col-md-7">
           <h2>{product.name}</h2>
-          <h4 className="text-danger">
-            {Number(product.price).toLocaleString("vi-VN")}₫
-          </h4>
+          <h4 className="text-danger">{Number(product.price).toLocaleString("vi-VN")}₫</h4>
 
           <table className="table mt-3">
             <tbody>
-              {visibleSpecs.map((spec, idx) => (
+              {visibleSpecs.map((spec, idx)=> (
                 <tr key={idx}>
                   <th>{spec.label}</th>
                   <td>{spec.value}</td>
@@ -524,30 +366,19 @@ function ProductDetail() {
             </tbody>
           </table>
 
-          {specs.length > 10 && (
-            <button
-              className="btn btn-light d-flex align-items-center gap-2"
-              onClick={() => setShowAllSpecs(!showAllSpecs)}
-            >
-              {showAllSpecs ? (
-                <>
-                  Thu gọn <FaChevronUp />
-                </>
-              ) : (
-                <>
-                  Xem thêm <FaChevronDown />
-                </>
-              )}
+          {specs.length>10 && (
+            <button className="btn btn-light d-flex align-items-center gap-2" onClick={()=> setShowAllSpecs(!showAllSpecs)}>
+              {showAllSpecs ? <>Thu gọn <FaChevronUp /></> : <>Xem thêm <FaChevronDown /></>}
             </button>
           )}
 
           <button
-            onClick={handleAddToCart}
-            className="btn btn-warning mt-3"
-            disabled={adding}
-          >
-            {adding ? "Đang thêm..." : "Thêm vào giỏ"}
-          </button>
+  onClick={handleAddToCart}
+  className="btn btn-warning mt-3"
+  disabled={adding || added}
+>
+  {adding ? "Đang thêm..." : added ? "Đã thêm vào giỏ" : "Thêm vào giỏ"}
+</button>
         </div>
       </div>
     </div>

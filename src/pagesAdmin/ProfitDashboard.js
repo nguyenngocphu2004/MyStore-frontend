@@ -10,6 +10,8 @@ import {
   Legend
 } from "chart.js";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -17,7 +19,6 @@ export default function ProfitDashboard() {
   const [profitData, setProfitData] = useState([]);
   const [extraCostsByMonth, setExtraCostsByMonth] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [toast, setToast] = useState(null); // { msg, type }
   const itemsPerPage = 2;
   const token = localStorage.getItem("adminToken");
 
@@ -34,6 +35,8 @@ export default function ProfitDashboard() {
           initialCosts[month] = { staff, rent, living, other };
         });
         setExtraCostsByMonth(initialCosts);
+      } else {
+        toast.error("Lấy dữ liệu thất bại!");
       }
     };
     fetchProfit();
@@ -75,11 +78,6 @@ export default function ProfitDashboard() {
     }));
   };
 
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const saveExtraCosts = async () => {
     const res = await fetch("http://localhost:5000/admin/extra_costs", {
       method: "POST",
@@ -90,9 +88,9 @@ export default function ProfitDashboard() {
       body: JSON.stringify(extraCostsByMonth),
     });
     if (res.ok) {
-      showToast("Lưu chi phí thành công!", "success");
+      toast.success("Lưu chi phí thành công!");
     } else {
-      showToast("Lưu thất bại!", "danger");
+      toast.error("Lưu thất bại!");
     }
   };
 
@@ -100,27 +98,9 @@ export default function ProfitDashboard() {
 
   return (
     <div className="container mt-5">
-      <h2>Lợi nhuận theo tháng với chi phí bổ sung</h2>
+      <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Toast hiển thị góc trên bên phải */}
-      {toast && (
-        <div
-          className={`toast show position-fixed top-0 end-0 m-3 text-white border-0 ${
-            toast.type === "success" ? "bg-success" : "bg-danger"
-          }`}
-          role="alert"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="d-flex">
-            <div className="toast-body">{toast.msg}</div>
-            <button
-              type="button"
-              className="btn-close btn-close-white me-2 m-auto"
-              onClick={() => setToast(null)}
-            ></button>
-          </div>
-        </div>
-      )}
+      <h2>Lợi nhuận theo tháng với chi phí bổ sung</h2>
 
       <button className="btn btn-primary mb-3" onClick={saveExtraCosts}>
         Lưu chi phí

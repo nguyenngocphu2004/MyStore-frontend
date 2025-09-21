@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from "react";
 import ConfirmModal from "../components/ConfirmModal";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {BiUserPlus,BiTrash, BiEdit } from "react-icons/bi";
+import { Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -8,29 +20,29 @@ export default function AdminUsers() {
   const [editUser, setEditUser] = useState(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
-  const [toast, setToast] = useState(null);
 
   const token = localStorage.getItem("adminToken");
   const role = localStorage.getItem("adminRole");
 
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
+  // Fetch users
   const fetchUsers = async () => {
-    const res = await fetch("http://localhost:5000/admin/users", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data);
-      setPage(1);
+    try {
+      const res = await fetch("http://localhost:5000/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+        setPage(1);
+      }
+    } catch (err) {
+      toast.error("❌ Lỗi khi tải danh sách user");
     }
   };
 
   useEffect(() => { fetchUsers(); }, []);
 
+  // Tạo user
   const handleCreateUser = async (e) => {
     e.preventDefault();
     const res = await fetch("http://localhost:5000/admin/users", {
@@ -39,15 +51,16 @@ export default function AdminUsers() {
       body: JSON.stringify(newUser),
     });
     if (res.ok) {
-      showToast("Tạo user thành công!");
+      toast.success("Tạo user thành công!");
       setNewUser({ username: "", email: "", password: "", role: "CUSTOMER" });
       fetchUsers();
     } else {
       const err = await res.json();
-      showToast(err.error || "Không thể tạo user", "danger");
+      toast.error(`${err.error || "Không thể tạo user"}`);
     }
   };
 
+  // Sửa user
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     const res = await fetch(`http://localhost:5000/admin/users/${editUser.id}`, {
@@ -56,26 +69,27 @@ export default function AdminUsers() {
       body: JSON.stringify(editUser),
     });
     if (res.ok) {
-      showToast("Cập nhật user thành công!");
+      toast.success("Cập nhật user thành công!");
       setEditUser(null);
       fetchUsers();
     } else {
       const err = await res.json();
-      showToast(err.error || "Không thể cập nhật user", "danger");
+      toast.error(`${err.error || "Không thể cập nhật user"}`);
     }
   };
 
+  // Xóa user
   const handleDeleteUser = async (id) => {
     const res = await fetch(`http://localhost:5000/admin/users/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
-      showToast("Xóa user thành công!");
+      toast.success("Xóa user thành công!");
       fetchUsers();
     } else {
       const err = await res.json();
-      showToast(err.error || "Không thể xóa user", "danger");
+      toast.error(`${err.error || "Không thể xóa user"}`);
     }
   };
 
@@ -83,19 +97,39 @@ export default function AdminUsers() {
   const totalPages = Math.ceil(users.length / perPage);
   const paginatedUsers = users.slice((page - 1) * perPage, page * perPage);
 
+  // --- Tính số lượng theo role ---
+  const totalAdmin = users.filter(u => u.role === "ADMIN").length;
+  const totalStaff = users.filter(u => u.role === "STAFF").length;
+  const totalCustomer = users.filter(u => u.role === "CUSTOMER").length;
+
+  const pieData = {
+    labels: ["Quản trị viên", "Nhân viên", "Khách hàng"],
+    datasets: [
+      {
+        data: [totalAdmin, totalStaff, totalCustomer],
+        backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56"],
+      },
+    ],
+  };
+
   return (
     <div className="container mt-4">
-      {/* Toast */}
-      {toast && (
-        <div className={`toast show position-fixed top-0 end-0 m-3 text-white border-0 ${toast.type === "success" ? "bg-success" : "bg-danger"}`} style={{ zIndex: 9999 }}>
-          <div className="d-flex">
-            <div className="toast-body">{toast.msg}</div>
-            <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setToast(null)}></button>
-          </div>
-        </div>
-      )}
+      <ToastContainer position="top-right" autoClose={3000} />
 
       <h3 className="mb-3">Quản lý người dùng</h3>
+
+      {/* Tổng người dùng + Pie chart */}
+      <div className="d-flex align-items-center mb-3">
+        <p className="text-muted mb-0 me-3">
+          Tổng số người dùng: <strong>{users.length}</strong> |
+          Quản trị viên: <strong>{totalAdmin}</strong> |
+          Nhân viên: <strong>{totalStaff}</strong> |
+          Khách hàng: <strong>{totalCustomer}</strong>
+        </p>
+        <div style={{ width: "120px", height: "120px" }}>
+          <Pie data={pieData} options={{ plugins: { legend: { display: false } } }} />
+        </div>
+      </div>
 
       {/* Form tạo user */}
       {role === "ADMIN" && (
@@ -124,7 +158,7 @@ export default function AdminUsers() {
                 </select>
               </div>
               <div className="col-12">
-                <button type="submit" className="btn btn-success">+ Tạo User</button>
+                <button type="submit" className="btn btn-success"><BiUserPlus/> Tạo User</button>
               </div>
             </form>
           </div>
@@ -148,9 +182,9 @@ export default function AdminUsers() {
               <td>{u.role}</td>
               {(role === "ADMIN" || role === "STAFF") && (
                 <td>
-                  <button className="btn btn-warning btn-sm me-2" onClick={() => setEditUser({ ...u, password: "" })}>Sửa</button>
+                  <button className="btn btn-warning btn-sm me-2" onClick={() => setEditUser({ ...u, password: "" })}><BiEdit /></button>
                   {role === "ADMIN" && (
-                    <button className="btn btn-danger btn-sm" onClick={() => setConfirmDeleteId(u.id)}>Xóa</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => setConfirmDeleteId(u.id)}><BiTrash /></button>
                   )}
                 </td>
               )}
@@ -159,29 +193,13 @@ export default function AdminUsers() {
         </tbody>
       </table>
 
-      {/* Phân trang giống AdminOrders */}
-      <div className="d-flex justify-content-center mt-3">
-        <nav>
-          <ul className="pagination">
-            <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-              <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => setPage(page - 1)} disabled={page === 1}>Trước</button>
-            </li>
-            {Array.from({ length: totalPages }, (_, i) => {
-              const pageNumber = i + 1;
-              return (
-                <li key={i} className="page-item">
-                  <button className={`btn btn-sm me-2 ${page === pageNumber ? "btn-dark" : "btn-outline-secondary"}`} onClick={() => setPage(pageNumber)}>
-                    {pageNumber}
-                  </button>
-                </li>
-              );
-            })}
-            <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
-              <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => setPage(page + 1)} disabled={page === totalPages}>Sau</button>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      {/* Confirm modal */}
+      <ConfirmModal
+        show={confirmDeleteId !== null}
+        message="Bạn có chắc muốn xóa user này?"
+        onConfirm={() => { handleDeleteUser(confirmDeleteId); setConfirmDeleteId(null); }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
 
       {/* Form sửa user */}
       {editUser && (role === "ADMIN" || role === "STAFF") && (
@@ -219,14 +237,6 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
-
-      {/* Confirm modal */}
-      <ConfirmModal
-        show={confirmDeleteId !== null}
-        message="Bạn có chắc muốn xóa user này?"
-        onConfirm={() => { handleDeleteUser(confirmDeleteId); setConfirmDeleteId(null); }}
-        onCancel={() => setConfirmDeleteId(null)}
-      />
     </div>
   );
 }

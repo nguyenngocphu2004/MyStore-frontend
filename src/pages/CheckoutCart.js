@@ -7,10 +7,10 @@ function CheckoutCart() {
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); // <-- Thêm state thông báo
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  // Tạo đơn hàng từ giỏ (gửi thông tin khách + sản phẩm)
   useEffect(() => {
     const createOrder = async () => {
       try {
@@ -25,10 +25,7 @@ function CheckoutCart() {
 
         const res = await axios.post(
           "http://localhost:5000/create_order_from_cart",
-          {
-            checkoutInfo,
-            products: selectedProducts,
-          },
+          { checkoutInfo, products: selectedProducts },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -53,30 +50,26 @@ function CheckoutCart() {
       setError("Vui lòng chọn phương thức thanh toán");
       return;
     }
+
     setLoading(true);
     setError("");
+    setSuccessMessage(""); // Reset thông báo cũ
 
     try {
       let url = "";
-      if (selectedMethod === "Momo") {
-        url = `http://localhost:5000/api/create_momo_payment/${order.order_id}`;
-      } else if (selectedMethod === "ZaloPay") {
-        url = `http://localhost:5000/api/create_zalopay_payment/${order.order_id}`;
-      } else if (selectedMethod === "COD") {
-        url = `http://localhost:5000/api/pay_cod/${order.order_id}`;
-      }
+      if (selectedMethod === "Momo") url = `http://localhost:5000/api/create_momo_payment/${order.order_id}`;
+      else if (selectedMethod === "ZaloPay") url = `http://localhost:5000/api/create_zalopay_payment/${order.order_id}`;
+      else if (selectedMethod === "COD") url = `http://localhost:5000/api/pay_cod/${order.order_id}`;
 
       const res = await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
       const data = res.data;
 
       if (selectedMethod === "COD") {
-        alert("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
-        // Xoá giỏ hàng và các thông tin đã lưu
+        setSuccessMessage("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
         localStorage.removeItem("selectedProducts");
         localStorage.removeItem("checkoutInfo");
-        navigate("/orders");
+        setTimeout(() => navigate("/profile"), 2000);
       } else if (data.payUrl) {
-        // Xoá giỏ hàng và thông tin khi chuyển trang thanh toán
         localStorage.removeItem("selectedProducts");
         localStorage.removeItem("checkoutInfo");
         window.location.href = data.payUrl;
@@ -92,21 +85,9 @@ function CheckoutCart() {
   };
 
   const paymentOptions = [
-    {
-      value: "Momo",
-      label: "Thanh toán qua MoMo",
-      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/MoMo_Logo_dlzdlh.png",
-    },
-    {
-      value: "ZaloPay",
-      label: "Thanh toán qua ZaloPay",
-      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/Zalo_logo_rjmkwb.png",
-    },
-    {
-      value: "COD",
-      label: "Thanh toán khi nhận hàng",
-      logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082325/cash-on-delivery-banner_ddmuaa.png",
-    },
+    { value: "Momo", label: "Thanh toán qua MoMo", logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/MoMo_Logo_dlzdlh.png" },
+    { value: "ZaloPay", label: "Thanh toán qua ZaloPay", logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082184/Zalo_logo_rjmkwb.png" },
+    { value: "COD", label: "Thanh toán khi nhận hàng", logo: "https://res.cloudinary.com/dbnra16ca/image/upload/v1758082325/cash-on-delivery-banner_ddmuaa.png" },
   ];
 
   if (loading) return <div className="container py-5 text-center">Đang xử lý...</div>;
@@ -115,11 +96,7 @@ function CheckoutCart() {
   return (
     <div className="container my-5 d-flex justify-content-center">
       <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
-        {/* Header màu vàng */}
-        <div
-          className="card-header bg-warning text-center"
-          style={{ backgroundColor: "#ffba00", color: "#000" }}
-        >
+        <div className="card-header bg-warning text-center" style={{ color: "#000" }}>
           <h4 className="mb-0">Thanh toán đơn hàng #{order.order_id}</h4>
         </div>
 
@@ -130,12 +107,10 @@ function CheckoutCart() {
           </p>
 
           <div className="mb-4">
-            {paymentOptions.map((opt) => (
+            {paymentOptions.map(opt => (
               <label
                 key={opt.value}
-                className={`d-flex align-items-center border rounded p-3 mb-3 shadow-sm ${
-                  selectedMethod === opt.value ? "bg-warning bg-opacity-25 border-warning" : ""
-                }`}
+                className={`d-flex align-items-center border rounded p-3 mb-3 shadow-sm ${selectedMethod === opt.value ? "bg-warning bg-opacity-25 border-warning" : ""}`}
                 style={{ cursor: "pointer" }}
               >
                 <input
@@ -152,9 +127,10 @@ function CheckoutCart() {
             ))}
           </div>
 
+          {/* Hiển thị thông báo */}
           {error && <div className="alert alert-danger text-center">{error}</div>}
+          {successMessage && <div className="alert alert-success text-center">{successMessage}</div>}
 
-          {/* Button thanh toán màu vàng */}
           <button
             className="w-100 py-2 fs-5"
             style={{ backgroundColor: "#ffba00", border: "none", color: "#000", borderRadius: "6px" }}

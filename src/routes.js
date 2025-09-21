@@ -31,6 +31,7 @@ import AdminChat from "./pagesAdmin/AdminChat";
 import ChangePassword from "./pages/ChangePassword";
 import AdminComments from "./pagesAdmin/AdminComments";
 import AboutUs from "./pages/AboutUs";
+import StockInPage from "./pagesAdmin/StockInPage";
 function AppRoutes() {
   return (
     <Routes>
@@ -68,6 +69,7 @@ function AppRoutes() {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="orders/:id" element={<AdminOrderDetail />} />
         <Route path="adminchat" element={<AdminChat />} />
+        <Route path="stockin" element={<StockInPage  />} />
         <Route path="admincomments" element={<AdminComments />} />
       </Route>
 

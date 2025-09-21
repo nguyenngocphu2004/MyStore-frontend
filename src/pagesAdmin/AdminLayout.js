@@ -120,6 +120,16 @@ export default function AdminLayout() {
               Chat với khách hàng
             </NavLink>
           </li>
+          <li>
+  <NavLink
+    to="stockin"
+    className={({ isActive }) =>
+      `nav-link text-white ${isActive ? "active bg-primary" : ""}`
+    }
+  >
+    Nhập sản phẩm
+  </NavLink>
+</li>
         </ul>
 
         <hr />

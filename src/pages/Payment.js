@@ -1,37 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-function ConfirmModal({ show, message, onConfirm, onCancel }) {
-  if (!show) return null;
-
-  return (
-    <div
-      className="modal fade show d-block"
-      tabIndex="-1"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-    >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content rounded-4 shadow-lg">
-          <div className="modal-header">
-            <h5 className="modal-title btn">Xác nhận</h5>
-            <button type="button" className="btn-close" onClick={onCancel}></button>
-          </div>
-          <div className="modal-body">
-            <p>{message}</p>
-          </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={onCancel}>
-              Hủy
-            </button>
-            <button className="btn btn-warning" onClick={onConfirm}>
-              Đồng ý
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import ConfirmModal from "../components/ConfirmModal";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Payment() {
   const { orderId } = useParams();
@@ -44,20 +15,12 @@ function Payment() {
   // State modal xác nhận COD
   const [showConfirmCOD, setShowConfirmCOD] = useState(false);
 
-  // State thông báo (thay alert)
-  const [notification, setNotification] = useState(null);
-
   useEffect(() => {
     fetch(`http://localhost:5000/orders/${orderId}`)
       .then((res) => res.json())
       .then((data) => setOrder(data))
       .catch(() => setOrder(null));
   }, [orderId]);
-
-  const showNotification = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
-  };
 
   const processPayment = async () => {
     setLoading(true);
@@ -78,19 +41,19 @@ function Payment() {
 
       if (res.ok) {
         if (selectedMethod === "COD") {
-          showNotification("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
-         setTimeout(() => {
-        navigate("/profile");
-        }, 2000);
+          toast.success("Đơn hàng đã được xác nhận, thanh toán khi nhận hàng!");
+          setTimeout(() => navigate("/profile"), 2000);
         } else if (data.payUrl) {
           window.location.href = data.payUrl;
         }
       } else {
         setError(data.error || "Không thể xử lý thanh toán");
+        toast.error(data.error || "Không thể xử lý thanh toán");
       }
     } catch (err) {
       console.error(err);
       setError("Lỗi kết nối server");
+      toast.error("Lỗi kết nối server");
     } finally {
       setLoading(false);
     }
@@ -98,12 +61,12 @@ function Payment() {
 
   const handlePay = () => {
     if (!selectedMethod) {
-      setError("⚠️ Vui lòng chọn phương thức thanh toán");
+      setError("Vui lòng chọn phương thức thanh toán");
+      toast.warning("Vui lòng chọn phương thức thanh toán");
       return;
     }
 
     if (selectedMethod === "COD") {
-      // Hiển thị modal xác nhận trước khi thanh toán COD
       setShowConfirmCOD(true);
     } else {
       processPayment();
@@ -135,14 +98,7 @@ function Payment() {
 
   return (
     <div className="container my-5 d-flex justify-content-center">
-      {notification && (
-        <div
-          className="alert alert-warning position-fixed top-0 end-0 m-3 shadow"
-          style={{ zIndex: 1055 }}
-        >
-          {notification}
-        </div>
-      )}
+      <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
         <div

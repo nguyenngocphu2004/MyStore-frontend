@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import {BiTrash, BiEdit,BiDetail } from "react-icons/bi";
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -297,8 +297,8 @@ export default function AdminProducts() {
       <h5>Thông số kỹ thuật</h5>
       <div className="row mb-3">
         {[
-          "cpu","ram","storage","screen","battery","os","camera_front","camera_rear",
-          "weight","color","dimensions","release_date","graphics_card","ports","warranty"
+          "CPU","RAM","Bộ nhớ","Màn hình","Pin","Hệ điều hành","Camera trước","Camera sau",
+          "Trọng lượng","Màu sắc","Kích thước","Ngày phát hành","Thẻ đồ họa","Cổng","Bảo hành"
         ].map((f) => (
           <div className="col-md-3 mb-2" key={f}>
             <input
@@ -314,7 +314,7 @@ export default function AdminProducts() {
       </div>
 
       <div className="mb-3">
-        <label>Upload images</label>
+        <label>Tải hình ảnh</label>
         <input type="file" multiple onChange={handleFileChange} className="form-control" />
       </div>
 
@@ -374,12 +374,12 @@ export default function AdminProducts() {
             <thead className="table-dark">
               <tr>
                 <th>ID</th>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Brand</th>
-                <th>Category</th>
-                <th>Images</th>
-                <th>Actions</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá</th>
+                <th>Thương hiệu</th>
+                <th>Danh mục</th>
+                <th>Hình ảnh</th>
+                <th>Phương thức</th>
               </tr>
             </thead>
             <tbody>
@@ -405,9 +405,9 @@ export default function AdminProducts() {
                     </div>
                   </td>
                   <td>
-                    <button className="btn btn-sm btn-info me-2" onClick={() => openDetail(p)}>Chi tiết</button>
-                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}>Sửa</button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)}>Xóa</button>
+                    <button className="btn btn-sm btn-info me-2" onClick={() => openDetail(p)}><BiDetail /></button>
+                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}><BiEdit /></button>
+                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)}><BiTrash /></button>
                   </td>
                 </tr>
               ))}
