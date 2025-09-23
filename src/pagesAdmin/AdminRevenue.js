@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -17,42 +17,59 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({});
   const [salesByProduct, setSalesByProduct] = useState([]);
   const [activeTab, setActiveTab] = useState("month_stats");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
   const [currentPageMonth, setCurrentPageMonth] = useState(1);
   const itemsPerPageMonth = 3; // mỗi trang 3 tháng
+  const [pagination, setPagination] = useState({}); // lưu thông tin phân trang từ backend
+
   const token = localStorage.getItem("adminToken");
 
+  const months = Array.from({ length: 12 }, (_, i) => i + 1); // 1 -> 12
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - i); // 5 năm gần đây
+
+  // Gọi API dashboard với page
+  const fetchStats = async (page = 1, monthQuery = "") => {
+  try {
+    const url = new URL("http://localhost:5000/admin/dashboard");
+    url.searchParams.append("page", page);
+    url.searchParams.append("per_page", itemsPerPageMonth);
+    if (monthQuery) url.searchParams.append("month", monthQuery); // thêm query month
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setStats(data);
+      setPagination(data.pagination || {});
+      setCurrentPageMonth(data.pagination?.page || 1);
+    } else {
+      console.error("Không lấy được dữ liệu dashboard");
+    }
+  } catch (error) {
+    console.error("Lỗi fetch:", error);
+  }
+};
+
+
+  const fetchSalesByProduct = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/admin/sales_by_product", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSalesByProduct(data);
+      }
+    } catch (err) {
+      console.error("Lỗi fetch sales:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/admin/dashboard", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        } else {
-          console.error("Không lấy được dữ liệu dashboard");
-        }
-      } catch (error) {
-        console.error("Lỗi fetch:", error);
-      }
-    };
-
-    const fetchSalesByProduct = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/admin/sales_by_product", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSalesByProduct(data);
-        }
-      } catch (err) {
-        console.error("Lỗi fetch sales:", err);
-      }
-    };
-
-    fetchStats();
+    fetchStats(1);
     fetchSalesByProduct();
   }, [token]);
 
@@ -61,28 +78,12 @@ export default function AdminDashboard() {
     datasets: [{ label, data: values || [], backgroundColor: color }]
   });
 
-  // Dữ liệu phân trang tháng
-  const paginatedRevenue = useMemo(() => {
-    return stats.revenue_by_month?.slice(
-      (currentPageMonth - 1) * itemsPerPageMonth,
-      currentPageMonth * itemsPerPageMonth
-    ) || [];
-  }, [stats.revenue_by_month, currentPageMonth]);
-
-  const paginatedOrders = useMemo(() => {
-    return stats.orders_by_month?.slice(
-      (currentPageMonth - 1) * itemsPerPageMonth,
-      currentPageMonth * itemsPerPageMonth
-    ) || [];
-  }, [stats.orders_by_month, currentPageMonth]);
-
-  const totalPagesMonth = Math.ceil((stats.revenue_by_month?.length || 0) / itemsPerPageMonth);
-
   return (
     <div className="container mt-5">
       <h2>Thống kê</h2>
       <div className="mb-3">
-        <strong>Tổng doanh thu:</strong> {(stats.total_revenue || 0).toLocaleString()} VNĐ
+        <strong>Tổng doanh thu:</strong>{" "}
+        {(stats.total_revenue || 0).toLocaleString()} VNĐ
       </div>
       <div className="mb-3">
         <strong>Tổng đơn hàng:</strong> {stats.total_orders || 0}
@@ -91,25 +92,33 @@ export default function AdminDashboard() {
       {/* Tabs menu */}
       <div className="mb-4">
         <button
-          className={`btn btn-outline-primary me-4 ${activeTab === "month_stats" ? "active" : ""}`}
+          className={`btn btn-outline-primary me-4 ${
+            activeTab === "month_stats" ? "active" : ""
+          }`}
           onClick={() => setActiveTab("month_stats")}
         >
           Doanh thu & Đơn hàng theo tháng
         </button>
         <button
-          className={`btn btn-outline-primary me-4 ${activeTab === "brand_stats" ? "active" : ""}`}
+          className={`btn btn-outline-primary me-4 ${
+            activeTab === "brand_stats" ? "active" : ""
+          }`}
           onClick={() => setActiveTab("brand_stats")}
         >
           Theo thương hiệu
         </button>
         <button
-          className={`btn btn-outline-primary me-4 ${activeTab === "category_stats" ? "active" : ""}`}
+          className={`btn btn-outline-primary me-4 ${
+            activeTab === "category_stats" ? "active" : ""
+          }`}
           onClick={() => setActiveTab("category_stats")}
         >
           Theo danh mục
         </button>
         <button
-          className={`btn btn-outline-primary me-4 ${activeTab === "product_stats" ? "active" : ""}`}
+          className={`btn btn-outline-primary me-4 ${
+            activeTab === "product_stats" ? "active" : ""
+          }`}
           onClick={() => setActiveTab("product_stats")}
         >
           Theo sản phẩm
@@ -121,14 +130,50 @@ export default function AdminDashboard() {
         {/* Doanh thu & đơn hàng theo tháng */}
         {activeTab === "month_stats" && (
           <div>
+            <div className="mb-3 d-flex align-items-center">
+  <select
+    className="form-select me-2"
+    value={selectedMonth}
+    onChange={(e) => setSelectedMonth(e.target.value)}
+  >
+    <option value="">Chọn tháng</option>
+    {months.map((m) => (
+      <option key={m} value={m.toString().padStart(2, '0')}>
+        {m}
+      </option>
+    ))}
+  </select>
+
+  <select
+    className="form-select me-2"
+    value={selectedYear}
+    onChange={(e) => setSelectedYear(e.target.value)}
+  >
+    <option value="">Chọn năm</option>
+    {years.map((y) => (
+      <option key={y} value={y}>{y}</option>
+    ))}
+  </select>
+
+  <button
+  className="btn btn-primary"
+  onClick={() => {
+    const monthQuery = selectedMonth && selectedYear ? `${selectedYear}-${selectedMonth}` : "";
+    fetchStats(1, monthQuery);
+  }}
+>
+  Tìm kiếm
+</button>
+
+</div>
             <h5>Doanh thu & Đơn hàng theo tháng</h5>
             <div className="row">
               <div className="col-md-6">
                 <h6>Doanh thu theo tháng</h6>
                 <Bar
                   data={createBarData(
-                    paginatedRevenue.map(r => r[0]),
-                    paginatedRevenue.map(r => r[1]),
+                    stats.revenue_by_month?.map((r) => r[0]),
+                    stats.revenue_by_month?.map((r) => r[1]),
                     "Doanh thu (VNĐ)",
                     "rgba(54, 162, 235, 0.6)"
                   )}
@@ -138,8 +183,8 @@ export default function AdminDashboard() {
                 <h6>Đơn hàng theo tháng</h6>
                 <Bar
                   data={createBarData(
-                    paginatedOrders.map(r => r[0]),
-                    paginatedOrders.map(r => r[1]),
+                    stats.orders_by_month?.map((r) => r[0]),
+                    stats.orders_by_month?.map((r) => r[1]),
                     "Số đơn hàng",
                     "rgba(255, 99, 132, 0.6)"
                   )}
@@ -151,18 +196,21 @@ export default function AdminDashboard() {
             <div className="d-flex justify-content-center mt-3">
               <button
                 className="btn btn-secondary me-2"
-                disabled={currentPageMonth === 1}
-                onClick={() => setCurrentPageMonth(prev => prev - 1)}
+                disabled={currentPageMonth <= 1}
+                onClick={() => fetchStats(currentPageMonth - 1)}
               >
                 &lt; Trước
               </button>
               <span className="align-self-center mx-2">
-                Trang {currentPageMonth} / {totalPagesMonth}
+                Trang {pagination.page || 1} / {pagination.total_pages || 1}
               </span>
               <button
                 className="btn btn-secondary ms-2"
-                disabled={currentPageMonth === totalPagesMonth}
-                onClick={() => setCurrentPageMonth(prev => prev + 1)}
+                disabled={
+                  !pagination.total_pages ||
+                  currentPageMonth >= pagination.total_pages
+                }
+                onClick={() => fetchStats(currentPageMonth + 1)}
               >
                 Tiếp &gt;
               </button>
@@ -179,8 +227,8 @@ export default function AdminDashboard() {
                 <h6>Số lượng sản phẩm theo thương hiệu</h6>
                 <Bar
                   data={createBarData(
-                    stats.products_by_brand?.map(r => r[0]),
-                    stats.products_by_brand?.map(r => r[1]),
+                    stats.products_by_brand?.map((r) => r[0]),
+                    stats.products_by_brand?.map((r) => r[1]),
                     "Số sản phẩm",
                     "rgba(75, 192, 192, 0.6)"
                   )}
@@ -190,8 +238,8 @@ export default function AdminDashboard() {
                 <h6>Doanh thu theo thương hiệu</h6>
                 <Bar
                   data={createBarData(
-                    stats.revenue_by_brand?.map(r => r[0]),
-                    stats.revenue_by_brand?.map(r => r[1]),
+                    stats.revenue_by_brand?.map((r) => r[0]),
+                    stats.revenue_by_brand?.map((r) => r[1]),
                     "Doanh thu (VNĐ)",
                     "rgba(255, 159, 64, 0.6)"
                   )}
@@ -210,8 +258,8 @@ export default function AdminDashboard() {
                 <h6>Số lượng sản phẩm theo danh mục</h6>
                 <Bar
                   data={createBarData(
-                    stats.products_by_category?.map(r => `${r[0]}`),
-                    stats.products_by_category?.map(r => r[1]),
+                    stats.products_by_category?.map((r) => `${r[0]}`),
+                    stats.products_by_category?.map((r) => r[1]),
                     "Số sản phẩm",
                     "rgba(153, 102, 255, 0.6)"
                   )}
@@ -221,8 +269,8 @@ export default function AdminDashboard() {
                 <h6>Doanh thu theo danh mục</h6>
                 <Bar
                   data={createBarData(
-                    stats.revenue_by_category?.map(r => `${r[0]}`),
-                    stats.revenue_by_category?.map(r => r[1]),
+                    stats.revenue_by_category?.map((r) => `${r[0]}`),
+                    stats.revenue_by_category?.map((r) => r[1]),
                     "Doanh thu (VNĐ)",
                     "rgba(255, 206, 86, 0.6)"
                   )}

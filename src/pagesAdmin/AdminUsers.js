@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ConfirmModal from "../components/ConfirmModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {BiUserPlus,BiTrash, BiEdit } from "react-icons/bi";
+import { BiUserPlus, BiTrash, BiEdit } from "react-icons/bi";
 import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -18,29 +18,37 @@ export default function AdminUsers() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "", role: "CUSTOMER" });
   const [editUser, setEditUser] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("");
+
+  // --- Pagination state ---
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const perPage = 10;
 
   const token = localStorage.getItem("adminToken");
   const role = localStorage.getItem("adminRole");
 
-  // Fetch users
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/admin/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
-        setPage(1);
-      }
-    } catch (err) {
-      toast.error("❌ Lỗi khi tải danh sách user");
+  // Fetch users có phân trang
+  const fetchUsers = async (pageNum = 1) => {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/admin/users?page=${pageNum}&per_page=${perPage}&search=${search}&role=${filterRole}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      setUsers(data.users);
+      setPage(data.current_page);
+      setTotalPages(data.pages);
     }
-  };
+  } catch (err) {
+    toast.error("Lỗi khi tải danh sách user");
+  }
+};
 
-  useEffect(() => { fetchUsers(); }, []);
+
+  useEffect(() => { fetchUsers(1); }, []);
 
   // Tạo user
   const handleCreateUser = async (e) => {
@@ -53,7 +61,7 @@ export default function AdminUsers() {
     if (res.ok) {
       toast.success("Tạo user thành công!");
       setNewUser({ username: "", email: "", password: "", role: "CUSTOMER" });
-      fetchUsers();
+      fetchUsers(page);
     } else {
       const err = await res.json();
       toast.error(`${err.error || "Không thể tạo user"}`);
@@ -71,7 +79,7 @@ export default function AdminUsers() {
     if (res.ok) {
       toast.success("Cập nhật user thành công!");
       setEditUser(null);
-      fetchUsers();
+      fetchUsers(page);
     } else {
       const err = await res.json();
       toast.error(`${err.error || "Không thể cập nhật user"}`);
@@ -86,16 +94,12 @@ export default function AdminUsers() {
     });
     if (res.ok) {
       toast.success("Xóa user thành công!");
-      fetchUsers();
+      fetchUsers(page);
     } else {
       const err = await res.json();
       toast.error(`${err.error || "Không thể xóa user"}`);
     }
   };
-
-  // --- Phân trang frontend ---
-  const totalPages = Math.ceil(users.length / perPage);
-  const paginatedUsers = users.slice((page - 1) * perPage, page * perPage);
 
   // --- Tính số lượng theo role ---
   const totalAdmin = users.filter(u => u.role === "ADMIN").length;
@@ -121,10 +125,10 @@ export default function AdminUsers() {
       {/* Tổng người dùng + Pie chart */}
       <div className="d-flex align-items-center mb-3">
         <p className="text-muted mb-0 me-3">
-          Tổng số người dùng: <strong>{users.length}</strong> |
-          Quản trị viên: <strong>{totalAdmin}</strong> |
-          Nhân viên: <strong>{totalStaff}</strong> |
-          Khách hàng: <strong>{totalCustomer}</strong>
+          Tổng số: <strong>{users.length}</strong> |
+          Admin: <strong>{totalAdmin}</strong> |
+          Staff: <strong>{totalStaff}</strong> |
+          Customer: <strong>{totalCustomer}</strong>
         </p>
         <div style={{ width: "120px", height: "120px" }}>
           <Pie data={pieData} options={{ plugins: { legend: { display: false } } }} />
@@ -158,12 +162,43 @@ export default function AdminUsers() {
                 </select>
               </div>
               <div className="col-12">
-                <button type="submit" className="btn btn-success"><BiUserPlus/> Tạo User</button>
+                <button type="submit" className="btn btn-success"><BiUserPlus /> Tạo User</button>
               </div>
             </form>
           </div>
         </div>
+
       )}
+      {/* Bộ lọc và tìm kiếm */}
+<div className="d-flex align-items-center mb-3">
+  <input
+    type="text"
+    className="form-control me-2"
+    style={{ width: "800px" }}
+    placeholder="Tìm theo username/email..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
+
+  <select
+    className="form-select me-2"
+    style={{ width: "180px" }}
+    value={filterRole}
+    onChange={(e) => setFilterRole(e.target.value)}
+  >
+    <option value="">Tất cả vai trò</option>
+    <option value="ADMIN">ADMIN</option>
+    <option value="STAFF">STAFF</option>
+    <option value="CUSTOMER">CUSTOMER</option>
+  </select>
+
+  <button
+    className="btn btn-primary"
+    onClick={() => fetchUsers(1)} // tìm từ đầu
+  >
+    Tìm kiếm
+  </button>
+</div>
 
       {/* Bảng user */}
       <table className="table table-striped table-hover shadow-sm">
@@ -174,7 +209,7 @@ export default function AdminUsers() {
           </tr>
         </thead>
         <tbody>
-          {paginatedUsers.map(u => (
+          {users.map(u => (
             <tr key={u.id}>
               <td>{u.id}</td>
               <td>{u.username}</td>
@@ -192,6 +227,53 @@ export default function AdminUsers() {
           ))}
         </tbody>
       </table>
+
+     {/* Pagination giữ style cũ */}
+<div className="d-flex justify-content-center mt-4">
+  <nav>
+    <ul className="pagination">
+      {/* Nút Trước */}
+      <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+        <button
+          className="btn btn-sm btn-outline-secondary me-2"
+          onClick={() => fetchUsers(page - 1)}
+          disabled={page === 1}
+        >
+          Trước
+        </button>
+      </li>
+
+      {/* Hiển thị số trang */}
+      {[...Array(totalPages)].map((_, idx) => {
+        const pageNumber = idx + 1;
+        return (
+          <li key={idx} className="page-item">
+            <button
+              className={`btn btn-sm me-2 ${
+                page === pageNumber ? "btn-dark" : "btn-outline-secondary"
+              }`}
+              onClick={() => fetchUsers(pageNumber)}
+            >
+              {pageNumber}
+            </button>
+          </li>
+        );
+      })}
+
+      {/* Nút Sau */}
+      <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
+        <button
+          className="btn btn-sm btn-outline-secondary me-2"
+          onClick={() => fetchUsers(page + 1)}
+          disabled={page === totalPages}
+        >
+          Sau
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
 
       {/* Confirm modal */}
       <ConfirmModal

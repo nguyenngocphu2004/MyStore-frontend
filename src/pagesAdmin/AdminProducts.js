@@ -39,6 +39,10 @@ export default function AdminProducts() {
   const [modalImages, setModalImages] = useState([]);
   const [modalTitle, setModalTitle] = useState("");
 
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterBrand, setFilterBrand] = useState("");
+
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,7 +50,15 @@ export default function AdminProducts() {
 
   // Fetch products
   const fetchProducts = async (pageNumber = 1) => {
-    const res = await fetch(`http://localhost:5000/products?page=${pageNumber}`);
+    const params = new URLSearchParams({
+      page: pageNumber,
+      per_page: perPage,
+      search,
+      category: filterCategory,
+      brand: filterBrand,
+    });
+
+    const res = await fetch(`http://localhost:5000/products?${params.toString()}`);
     if (res.ok) {
       const data = await res.json();
       setProducts(data.products || []);
@@ -370,6 +382,59 @@ export default function AdminProducts() {
       {activeTab === "list" && (
         <>
           <h3>Danh sách sản phẩm</h3>
+          {/* Search + Filter */}
+          <div className="row mb-3">
+            <div className="col-md-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Tìm sản phẩm..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="col-md-3">
+              <select
+                className="form-select"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                <option value="">Tất cả danh mục</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-3">
+              <select
+                className="form-select"
+                value={filterBrand}
+                onChange={(e) => setFilterBrand(e.target.value)}
+              >
+                <option value="">Tất cả thương hiệu</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.name}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-2">
+              <button
+                className="btn btn-primary w-100"
+                onClick={() => {
+                  setSearch("");
+                  setFilterCategory("");
+                  setFilterBrand("");
+                  fetchProducts(1);
+                }}
+              >
+                Tìm kiếm
+              </button>
+            </div>
+          </div>
           <table className="table table-striped table-bordered">
             <thead className="table-dark">
               <tr>
@@ -383,35 +448,78 @@ export default function AdminProducts() {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.name}</td>
-                  <td>{p.price}</td>
-                  <td>{p.brand}</td>
-                  <td>{p.category}</td>
-                  <td>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
-                      {p.images && p.images.length > 0 && (
-                        <>
-                          <img src={p.images[0]} alt={p.name} style={{ width: "80px", height: "50px", objectFit: "cover", borderRadius: "4px" }} />
-                          {p.images.length > 1 && (
-                            <button className="btn btn-sm btn-outline-primary" onClick={() => openModal(p.name, p.images)}>
-                              Xem tất cả ({p.images.length})
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <button className="btn btn-sm btn-info me-2" onClick={() => openDetail(p)}><BiDetail /></button>
-                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(p)}><BiEdit /></button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)}><BiTrash /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {products.length > 0 ? (
+    products.map((p) => (
+      <tr key={p.id}>
+        <td>{p.id}</td>
+        <td>{p.name}</td>
+        <td>{p.price}</td>
+        <td>{p.brand}</td>
+        <td>{p.category}</td>
+        <td>
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {p.images && p.images.length > 0 && (
+              <>
+                <img
+                  src={p.images[0]}
+                  alt={p.name}
+                  style={{
+                    width: "80px",
+                    height: "50px",
+                    objectFit: "cover",
+                    borderRadius: "4px",
+                  }}
+                />
+                {p.images.length > 1 && (
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => openModal(p.name, p.images)}
+                  >
+                    Xem tất cả ({p.images.length})
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </td>
+        <td>
+          <button
+            className="btn btn-sm btn-info me-2"
+            onClick={() => openDetail(p)}
+          >
+            <BiDetail />
+          </button>
+          <button
+            className="btn btn-sm btn-warning me-2"
+            onClick={() => handleEdit(p)}
+          >
+            <BiEdit />
+          </button>
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={() => handleDelete(p.id)}
+          >
+            <BiTrash />
+          </button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="7" className="text-center text-muted">
+        Không tìm thấy sản phẩm nào.
+      </td>
+    </tr>
+  )}
+</tbody>
           </table>
 
           {/* Pagination */}

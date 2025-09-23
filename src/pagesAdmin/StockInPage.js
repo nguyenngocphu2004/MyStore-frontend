@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { BiPackage, BiHistory, BiTrash, BiEdit } from "react-icons/bi";
+import { BiPackage, BiHistory, BiTrash, BiEdit, BiPlus, BiCalendar } from "react-icons/bi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmModal from "../components/ConfirmModal";
+import LogsModal from "../components/LogsModal";
 
 function StockIn() {
   const [products, setProducts] = useState([]);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("form");
+  const [search, setSearch] = useState("");
+  const [filterProduct, setFilterProduct] = useState("");
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState([]);
+  // form nhiều sản phẩm
 
-  const [form, setForm] = useState({
-    product_id: "",
-    quantity: "",
-    price: ""
-  });
+  const [items, setItems] = useState([
+    { product_id: "", quantity: "", price: "" },
+  ]);
 
   const [editEntry, setEditEntry] = useState(null);
 
@@ -29,9 +33,11 @@ function StockIn() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  const formatPrice = (value) => (value ? new Intl.NumberFormat("vi-VN").format(value) : "");
+  const formatPrice = (value) =>
+    value ? new Intl.NumberFormat("vi-VN").format(value) : "";
   const parsePrice = (value) => value.replace(/\D/g, "");
-  const formatDate = (dateStr) => (dateStr ? new Intl.DateTimeFormat("vi-VN").format(new Date(dateStr)) : "");
+  const formatDate = (dateStr) =>
+    dateStr ? new Intl.DateTimeFormat("vi-VN").format(new Date(dateStr)) : "";
 
   // Load sản phẩm
   useEffect(() => {
@@ -45,39 +51,67 @@ function StockIn() {
 
   // Load lịch sử nhập kho
   const fetchHistory = (p = 1) => {
-    setLoading(true);
-    axios
-      .get(`http://localhost:5000/admin/stockin?page=${p}&per_page=${perPage}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setEntries(res.data.entries);
-        setPage(res.data.page);
-        setTotalPages(res.data.pages);
-        setLoading(false);
-      })
-      .catch(() => {
-        toast.error("Lỗi khi tải lịch sử nhập kho!");
-        setLoading(false);
-      });
+  setLoading(true);
+  axios
+    .get(`http://localhost:5000/admin/stockin?page=${p}&per_page=${perPage}&search=${search}&product_id=${filterProduct}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => {
+      setEntries(res.data.entries);
+      setPage(res.data.page);
+      setTotalPages(res.data.pages);
+      setLoading(false);
+    })
+    .catch(() => {
+      toast.error("Lỗi khi tải lịch sử nhập kho!");
+      setLoading(false);
+    });
+};
+
+  const fetchLogs = async (id) => {
+  try {
+    const res = await axios.get(`http://localhost:5000/admin/stockin/${id}/logs`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setLogs(res.data);
+    setShowLogs(true);
+  } catch (err) {
+    toast.error("Không thể tải lịch sử chỉnh sửa!");
+  }
+};
+
+  // Thêm dòng mới
+  const addRow = () => {
+    setItems([...items, { product_id: "", quantity: "", price: "" }]);
   };
 
-  // Form change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "price") setForm({ ...form, price: parsePrice(value) });
-    else setForm({ ...form, [name]: value });
+  // Xóa dòng
+  const removeRow = (index) => {
+    const newItems = [...items];
+    newItems.splice(index, 1);
+    setItems(newItems.length ? newItems : [{ product_id: "", quantity: "", price: "" }]);
+  };
+
+  // Thay đổi dữ liệu trong bảng
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...items];
+    newItems[index][field] =
+      field === "price" ? parsePrice(value) : value;
+    setItems(newItems);
   };
 
   // Submit nhập kho
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/admin/stockin", form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const payload = { items };
+      const res = await axios.post(
+        "http://localhost:5000/admin/stockin",
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       toast.success(res.data.message || "Nhập kho thành công!");
-      setForm({ product_id: "", quantity: "", price: "", date: new Date().toISOString().split("T")[0] });
+      setItems([{ product_id: "", quantity: "", price: "" }]);
       if (activeTab === "history") fetchHistory(page);
     } catch (err) {
       toast.error(err.response?.data?.error || "Lỗi khi nhập kho!");
@@ -113,15 +147,22 @@ function StockIn() {
   // Edit
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditEntry({ ...editEntry, [name]: name === "price" ? parsePrice(value) : value });
+    setEditEntry({
+      ...editEntry,
+      [name]: name === "price" ? parsePrice(value) : value,
+    });
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/admin/stockin/${editEntry.id}`, editEntry, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+        `http://localhost:5000/admin/stockin/${editEntry.id}`,
+        editEntry,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       toast.success("Cập nhật thành công!");
       setEditEntry(null);
       fetchHistory(page);
@@ -152,59 +193,89 @@ function StockIn() {
               fetchHistory(1);
             }}
           >
-            <BiHistory className="me-2" /> Lịch sử nhập kho
+            <BiHistory className="me-2" /> Lịch sử nhập sản phẩm
           </button>
         </li>
       </ul>
 
-      {/* Form Nhập kho */}
+      {/* Form Nhập kho nhiều sản phẩm */}
       {activeTab === "form" && (
         <form onSubmit={handleSubmit} className="card p-4 shadow mb-5">
-          <div className="mb-3">
-            <label className="form-label">Tên sản phẩm</label>
-            <select
-              className="form-select"
-              name="product_id"
-              value={form.product_id}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Chọn sản phẩm</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+          <h5 className="mb-3">Danh sách sản phẩm nhập</h5>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Số lượng</th>
+                <th>Giá</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, idx) => (
+                <tr key={idx}>
+                  <td>
+                    <select
+                      className="form-select"
+                      value={item.product_id}
+                      onChange={(e) =>
+                        handleItemChange(idx, "product_id", e.target.value)
+                      }
+                      required
+                    >
+                      <option value="">Chọn sản phẩm</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={item.quantity}
+                      min="1"
+                      required
+                      onChange={(e) =>
+                        handleItemChange(idx, "quantity", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formatPrice(item.price)}
+                      required
+                      onChange={(e) =>
+                        handleItemChange(idx, "price", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => removeRow(idx)}
+                    >
+                      <BiTrash />
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </select>
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label">Số lượng</label>
-            <input
-              type="number"
-              className="form-control"
-              name="quantity"
-              value={form.quantity}
-              onChange={handleChange}
-              min="1"
-              required
-            />
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label">Giá</label>
-            <input
-              type="text"
-              className="form-control"
-              name="price"
-              value={formatPrice(form.price)}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn btn-warning text-black w-100 py-2">
-            Lưu nhập kho
+            </tbody>
+          </table>
+          <button
+            type="button"
+            className="btn btn-secondary mb-3"
+            onClick={addRow}
+          >
+            <BiPlus className="me-2" /> Thêm sản phẩm
+          </button>
+          <button type="submit" className="btn btn-primary w-100 py-2">
+            Lưu phiếu nhập
           </button>
         </form>
       )}
@@ -212,6 +283,31 @@ function StockIn() {
       {/* Lịch sử nhập kho */}
       {activeTab === "history" && (
         <div>
+        <div className="d-flex mb-3">
+  <input
+    type="text"
+    className="form-control me-2"
+    placeholder="Tìm theo sản phẩm hoặc người nhập..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
+  <select
+    className="form-select me-2"
+    value={filterProduct}
+    onChange={(e) => setFilterProduct(e.target.value)}
+  >
+    <option value="">-- Tất cả sản phẩm --</option>
+    {products.map((p) => (
+      <option key={p.id} value={p.id}>
+        {p.name}
+      </option>
+    ))}
+  </select>
+  <button className="btn btn-primary" onClick={() => fetchHistory(1)}>
+    Lọc
+  </button>
+</div>
+
           {loading ? (
             <p className="text-center">Đang tải dữ liệu...</p>
           ) : (
@@ -219,7 +315,7 @@ function StockIn() {
               <table className="table table-striped table-bordered shadow">
                 <thead className="table-dark">
                   <tr>
-                    <th>#</th>
+                    <th>ID</th>
                     <th>Sản phẩm</th>
                     <th>Số lượng</th>
                     <th>Giá nhập</th>
@@ -274,9 +370,12 @@ function StockIn() {
                               <button className="btn btn-warning btn-sm me-2" onClick={() => setEditEntry(entry)}>
                                 <BiEdit />
                               </button>
-                              <button className="btn btn-danger btn-sm" onClick={() => handleDelete(entry.id)}>
+                              <button className="btn btn-danger btn-sm me-2" onClick={() => handleDelete(entry.id)}>
                                 <BiTrash />
                               </button>
+                              <button className="btn btn-info btn-sm" onClick={() => fetchLogs(entry.id)}>
+                                  <BiCalendar />
+                                </button>
                             </>
                           )}
                         </td>
@@ -335,7 +434,13 @@ function StockIn() {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />
+       <LogsModal
+      show={showLogs}
+      onClose={() => setShowLogs(false)}
+      logs={logs}
+    />
     </div>
+
   );
 }
 
