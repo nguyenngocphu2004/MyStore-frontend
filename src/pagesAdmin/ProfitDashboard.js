@@ -12,6 +12,7 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {BiSearch} from "react-icons/bi";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -150,7 +151,7 @@ export default function ProfitDashboard() {
       fetchProfit(1);
     }}
   >
-    Tìm kiếm
+    <BiSearch/>
   </button>
 </div>
 
@@ -207,7 +208,7 @@ export default function ProfitDashboard() {
           disabled={currentPage === 1}
           onClick={() => setCurrentPage((prev) => prev - 1)}
         >
-          &lt; Trước
+          &lt;
         </button>
         <span className="align-self-center">
           Trang {currentPage} / {totalPages}
@@ -217,7 +218,7 @@ export default function ProfitDashboard() {
           disabled={currentPage === totalPages}
           onClick={() => setCurrentPage((prev) => prev + 1)}
         >
-          Tiếp &gt;
+          &gt;
         </button>
       </div>
 

@@ -3,53 +3,48 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmModal from "../components/ConfirmModal";
-import {BiTrash, BiEdit } from "react-icons/bi";
+import { BiTrash, BiEdit, BiSearch } from "react-icons/bi";
 
-function AdminComments() {
+export default function AdminComments() {
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [search, setSearch] = useState("");
   const perPage = 3;
 
   const token = localStorage.getItem("adminToken");
-
-  // State để lưu id bình luận đang sửa và nội dung reply sửa
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [replyInput, setReplyInput] = useState("");
-
-  // State để quản lý xác nhận xóa
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/admin/comments", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setComments(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching comments:", err);
-        setLoading(false);
-        toast.error("Không thể tải danh sách bình luận.");
-      });
-  }, [token]);
+  const showToast = (msg, type = "success") => {
+    type === "success"
+      ? toast.success(msg, { position: "top-right", autoClose: 3000 })
+      : toast.error(msg, { position: "top-right", autoClose: 3000 });
+  };
 
-  const handleDeleteComment = async (commentId) => {
+  const fetchComments = async (pageNum = page) => {
+    setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/admin/comments/${commentId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-      toast.success("Xóa bình luận thành công.");
+      const res = await axios.get(
+        `http://localhost:5000/admin/comments?page=${pageNum}&per_page=${perPage}&search=${search}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setComments(res.data.comments);
+      setPages(res.data.pages);
+      setPage(res.data.page);
     } catch (err) {
-      console.error("Lỗi khi xóa bình luận:", err);
-      toast.error("Xóa bình luận thất bại.");
+      console.error(err);
+      showToast("Không thể tải danh sách bình luận", "error");
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchComments();
+  }, [token, page]);
 
   const handleStartEditReply = (comment) => {
     setEditingReplyId(comment.id);
@@ -66,11 +61,8 @@ function AdminComments() {
       await axios.put(
         `http://localhost:5000/admin/comments/${commentId}/reply`,
         { admin_reply: replyInput },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setComments((prev) =>
         prev.map((c) =>
           c.id === commentId ? { ...c, admin_reply: replyInput } : c
@@ -78,17 +70,27 @@ function AdminComments() {
       );
       setEditingReplyId(null);
       setReplyInput("");
-      toast.success("Cập nhật trả lời thành công.");
+      showToast("Cập nhật trả lời thành công");
     } catch (err) {
-      console.error("Lỗi khi cập nhật trả lời:", err);
-      toast.error("Cập nhật trả lời thất bại.");
+      console.error(err);
+      showToast("Cập nhật trả lời thất bại", "error");
     }
   };
 
-  if (loading) {
-    return <p className="text-center mt-5">Đang tải...</p>;
-  }
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await axios.delete(`http://localhost:5000/admin/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      showToast("Xóa bình luận thành công");
+    } catch (err) {
+      console.error(err);
+      showToast("Xóa bình luận thất bại", "error");
+    }
+  };
 
+  // Nhóm bình luận theo sản phẩm
   const grouped = comments.reduce((acc, c) => {
     if (!acc[c.product_id]) {
       acc[c.product_id] = {
@@ -101,13 +103,9 @@ function AdminComments() {
     acc[c.product_id].comments.push(c);
     return acc;
   }, {});
-
   const groupedArray = Object.values(grouped);
 
-  const indexOfLast = page * perPage;
-  const indexOfFirst = indexOfLast - perPage;
-  const currentProducts = groupedArray.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(groupedArray.length / perPage);
+  if (loading) return <p className="text-center mt-5">Đang tải...</p>;
 
   return (
     <div className="p-4">
@@ -115,58 +113,24 @@ function AdminComments() {
 
       <h3 className="mb-4 font-bold">Quản lý bình luận</h3>
 
-      {totalPages > 1 && (
-        <div className="d-flex justify-content-center mb-4">
-          <nav>
-            <ul className="pagination">
-              <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                <button
-                  className="btn btn-sm btn-outline-secondary me-2"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  Trước
-                </button>
-              </li>
+      {/* Search */}
+      <div className="d-flex mb-3">
+        <input
+          type="text"
+          className="form-control me-2"
+          placeholder="Tìm theo tên sản phẩm"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button className="btn btn-primary" onClick={() => fetchComments(1)}>
+          <BiSearch />
+        </button>
+      </div>
 
-              {[...Array(totalPages)].map((_, idx) => {
-                const pageNumber = idx + 1;
-                return (
-                  <li key={idx} className="page-item">
-                    <button
-                      className={`btn btn-sm me-2 ${
-                        page === pageNumber
-                          ? "btn-dark"
-                          : "btn-outline-secondary"
-                      }`}
-                      onClick={() => setPage(pageNumber)}
-                    >
-                      {pageNumber}
-                    </button>
-                  </li>
-                );
-              })}
-
-              <li
-                className={`page-item ${page === totalPages ? "disabled" : ""}`}
-              >
-                <button
-                  className="btn btn-sm btn-outline-secondary me-2"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  Sau
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      )}
-
-      {currentProducts.length === 0 ? (
+      {groupedArray.length === 0 ? (
         <p className="text-center">Chưa có bình luận nào</p>
       ) : (
-        currentProducts.map((group) => (
+        groupedArray.map((group) => (
           <div
             key={group.product_id}
             className="border rounded-lg p-4 mb-6 shadow-sm bg-white"
@@ -177,11 +141,7 @@ function AdminComments() {
                   <img
                     src={group.product_image}
                     alt={group.product_name}
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      objectFit: "cover",
-                    }}
+                    style={{ width: "60px", height: "60px", objectFit: "cover" }}
                     className="rounded border"
                   />
                 ) : (
@@ -243,7 +203,7 @@ function AdminComments() {
                               className="btn btn-sm btn-outline-primary ms-2"
                               onClick={() => handleStartEditReply(c)}
                             >
-                              <BiEdit/>
+                              <BiEdit />
                             </button>
                           </p>
                         ) : (
@@ -271,6 +231,49 @@ function AdminComments() {
         ))
       )}
 
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="d-flex justify-content-center mt-4">
+          <ul className="pagination">
+            <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+              <button
+                className="btn btn-sm btn-outline-secondary me-2"
+                onClick={() => fetchComments(page - 1)}
+                disabled={page === 1}
+              >
+                Trước
+              </button>
+            </li>
+
+            {[...Array(pages)].map((_, idx) => {
+              const pageNumber = idx + 1;
+              return (
+                <li key={idx} className="page-item">
+                  <button
+                    className={`btn btn-sm me-2 ${
+                      page === pageNumber ? "btn-dark" : "btn-outline-secondary"
+                    }`}
+                    onClick={() => fetchComments(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                </li>
+              );
+            })}
+
+            <li className={`page-item ${page === pages ? "disabled" : ""}`}>
+              <button
+                className="btn btn-sm btn-outline-secondary me-2"
+                onClick={() => fetchComments(page + 1)}
+                disabled={page === pages}
+              >
+                Sau
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
+
       {/* Confirm Modal */}
       <ConfirmModal
         show={confirmDeleteId !== null}
@@ -284,5 +287,3 @@ function AdminComments() {
     </div>
   );
 }
-
-export default AdminComments;

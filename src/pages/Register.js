@@ -8,7 +8,7 @@ import {
   BiErrorCircle,
 } from "react-icons/bi";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { toast } from "react-toastify";
+import { toast,ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function Register() {
@@ -128,7 +128,8 @@ function Register() {
       <div
         className="card shadow-lg p-5 rounded"
         style={{ maxWidth: "500px", width: "100%" }}
-      >
+      ><ToastContainer position="top-right" autoClose={3000} />
+
         <h2 className="text-center mb-4 fw-bold">Đăng ký</h2>
 
         <form onSubmit={handleSubmit}>

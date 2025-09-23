@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BiUser, BiLock,BiErrorCircle } from "react-icons/bi";
-import { toast } from "react-toastify";
+import { toast,ToastContainer } from "react-toastify";
 import { GoogleLogin } from '@react-oauth/google';
 import "react-toastify/dist/ReactToastify.css";
 
@@ -89,6 +89,7 @@ function Login() {
       style={{ minHeight: "90vh", background: "#f5f5f5" }}
     >
       <div className="card shadow-lg p-5 rounded" style={{ maxWidth: "500px", width: "100%" }}>
+      <ToastContainer position="top-right" autoClose={3000} />
         <h2 className="text-center mb-4 fw-bold">Đăng nhập</h2>
 
         <form onSubmit={handleSubmit}>
@@ -158,7 +159,6 @@ function Login() {
         <GoogleLogin
           onSuccess={handleGoogleLoginSuccess}
           onError={handleGoogleLoginError}
-          useOneTap
         />
 
         <p className="text-center mt-3 mb-0">

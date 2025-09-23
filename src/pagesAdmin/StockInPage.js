@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { BiPackage, BiHistory, BiTrash, BiEdit, BiPlus, BiCalendar } from "react-icons/bi";
+import { BiPackage, BiHistory, BiTrash, BiEdit, BiPlus, BiCalendar,BiSearch } from "react-icons/bi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmModal from "../components/ConfirmModal";
@@ -287,7 +287,7 @@ function StockIn() {
   <input
     type="text"
     className="form-control me-2"
-    placeholder="Tìm theo sản phẩm hoặc người nhập..."
+    placeholder="Tìm theo sản phẩm hoặc người nhập"
     value={search}
     onChange={(e) => setSearch(e.target.value)}
   />
@@ -296,7 +296,7 @@ function StockIn() {
     value={filterProduct}
     onChange={(e) => setFilterProduct(e.target.value)}
   >
-    <option value="">-- Tất cả sản phẩm --</option>
+    <option value="">Tất cả sản phẩm</option>
     {products.map((p) => (
       <option key={p.id} value={p.id}>
         {p.name}
@@ -304,7 +304,7 @@ function StockIn() {
     ))}
   </select>
   <button className="btn btn-primary" onClick={() => fetchHistory(1)}>
-    Lọc
+    <BiSearch/>
   </button>
 </div>
 

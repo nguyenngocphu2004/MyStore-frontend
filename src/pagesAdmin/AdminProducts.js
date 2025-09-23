@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {BiTrash, BiEdit,BiDetail } from "react-icons/bi";
+import {BiTrash, BiEdit,BiDetail,BiSearch } from "react-icons/bi";
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -68,7 +68,7 @@ export default function AdminProducts() {
   };
 
   const fetchBrands = async () => {
-    const res = await fetch("http://localhost:5000/brands");
+    const res = await fetch("http://localhost:5000/brandss");
     if (res.ok) {
       const data = await res.json();
       setBrands(data);
@@ -423,7 +423,7 @@ export default function AdminProducts() {
             </div>
             <div className="col-md-2">
               <button
-                className="btn btn-primary w-100"
+                className="btn btn-primary w-40"
                 onClick={() => {
                   setSearch("");
                   setFilterCategory("");
@@ -431,7 +431,7 @@ export default function AdminProducts() {
                   fetchProducts(1);
                 }}
               >
-                Tìm kiếm
+                <BiSearch/>
               </button>
             </div>
           </div>

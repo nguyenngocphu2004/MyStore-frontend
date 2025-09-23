@@ -10,7 +10,7 @@ import {
   Legend
 } from "chart.js";
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import {BiSearch } from "react-icons/bi";
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function AdminDashboard() {
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
     fetchStats(1, monthQuery);
   }}
 >
-  Tìm kiếm
+  <BiSearch/>
 </button>
 
 </div>
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
                 disabled={currentPageMonth <= 1}
                 onClick={() => fetchStats(currentPageMonth - 1)}
               >
-                &lt; Trước
+                &lt;
               </button>
               <span className="align-self-center mx-2">
                 Trang {pagination.page || 1} / {pagination.total_pages || 1}
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                 }
                 onClick={() => fetchStats(currentPageMonth + 1)}
               >
-                Tiếp &gt;
+                &gt;
               </button>
             </div>
           </div>

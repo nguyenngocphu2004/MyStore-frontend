@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import ConfirmModal from "../components/ConfirmModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { BiUserPlus, BiTrash, BiEdit } from "react-icons/bi";
+import { BiUserPlus, BiTrash, BiEdit, BiSearch } from "react-icons/bi";
 import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -20,6 +20,7 @@ export default function AdminUsers() {
   const [editUser, setEditUser] = useState(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const editFormRef = useRef(null);
 
   // --- Pagination state ---
   const [page, setPage] = useState(1);
@@ -46,7 +47,11 @@ export default function AdminUsers() {
     toast.error("Lỗi khi tải danh sách user");
   }
 };
-
+    useEffect(() => {
+    if (editUser && editFormRef.current) {
+      editFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [editUser]);
 
   useEffect(() => { fetchUsers(1); }, []);
 
@@ -196,7 +201,7 @@ export default function AdminUsers() {
     className="btn btn-primary"
     onClick={() => fetchUsers(1)} // tìm từ đầu
   >
-    Tìm kiếm
+    <BiSearch/>
   </button>
 </div>
 
@@ -285,7 +290,7 @@ export default function AdminUsers() {
 
       {/* Form sửa user */}
       {editUser && (role === "ADMIN" || role === "STAFF") && (
-        <div className="card mt-4 shadow-sm">
+        <div className="card mt-4 shadow-sm" ref={editFormRef}>
           <div className="card-header bg-warning">Sửa User</div>
           <div className="card-body">
             <form onSubmit={handleUpdateUser} className="row g-3">

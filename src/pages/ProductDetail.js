@@ -175,6 +175,7 @@ function ProductDetail() {
       return;
     }
     setAdding(true);
+    setAdded(false);
     try {
       await axios.post(
         "http://localhost:5000/cart/add",
