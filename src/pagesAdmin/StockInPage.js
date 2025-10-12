@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ConfirmModal from "../components/ConfirmModal";
 import LogsModal from "../components/LogsModal";
 
+
 function StockIn() {
   const [products, setProducts] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -36,8 +37,6 @@ function StockIn() {
   const formatPrice = (value) =>
     value ? new Intl.NumberFormat("vi-VN").format(value) : "";
   const parsePrice = (value) => value.replace(/\D/g, "");
-  const formatDate = (dateStr) =>
-    dateStr ? new Intl.DateTimeFormat("vi-VN").format(new Date(dateStr)) : "";
 
   // Load sản phẩm
   useEffect(() => {
@@ -119,30 +118,6 @@ function StockIn() {
   };
 
   // Modal xóa
-  const handleDelete = (id) => {
-    setDeleteId(id);
-    setShowConfirm(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await axios.delete(`http://localhost:5000/admin/stockin/${deleteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("Xóa thành công!");
-      fetchHistory(page);
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Xóa thất bại!");
-    } finally {
-      setShowConfirm(false);
-      setDeleteId(null);
-    }
-  };
-
-  const cancelDelete = () => {
-    setShowConfirm(false);
-    setDeleteId(null);
-  };
 
   // Edit
   const handleEditChange = (e) => {
@@ -182,7 +157,7 @@ function StockIn() {
             className={`nav-link ${activeTab === "form" ? "active" : ""}`}
             onClick={() => setActiveTab("form")}
           >
-            <BiPackage className="me-2" /> Nhập kho
+            <BiPackage className="me-2" /> Nhập sản phẩm
           </button>
         </li>
         <li className="nav-item">
@@ -353,7 +328,7 @@ function StockIn() {
                             onChange={handleEditChange}
                           />
                         ) : entry.price.toLocaleString() + " đ"}</td>
-                        <td>{formatDate(entry.date)}</td>
+                        <td>{new Date(entry.date).toLocaleString("vi-VN")}</td>
                         <td>{entry.imported_by}</td>
                         <td>
                           {editEntry?.id === entry.id ? (
@@ -370,9 +345,7 @@ function StockIn() {
                               <button className="btn btn-warning btn-sm me-2" onClick={() => setEditEntry(entry)}>
                                 <BiEdit />
                               </button>
-                              <button className="btn btn-danger btn-sm me-2" onClick={() => handleDelete(entry.id)}>
-                                <BiTrash />
-                              </button>
+
                               <button className="btn btn-info btn-sm" onClick={() => fetchLogs(entry.id)}>
                                   <BiCalendar />
                                 </button>
@@ -428,12 +401,7 @@ function StockIn() {
       )}
 
       {/* Confirm Modal */}
-      <ConfirmModal
-        show={showConfirm}
-        message="Bạn có chắc chắn muốn xóa bản ghi này?"
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
+
        <LogsModal
       show={showLogs}
       onClose={() => setShowLogs(false)}

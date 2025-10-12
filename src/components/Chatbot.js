@@ -43,7 +43,7 @@ function Chatbot() {
     const userMessage = { sender: "user", text: msgText };
     setMessages((prev) => [...prev, userMessage]);
 
-    if (msgText === "Gặp quản trị viên") {
+    if (msgText === "Gặp quản trị viên" || msgText === "Hỗ trợ kỹ thuật") {
       setIsChatWithAdmin(true);
       setMessages((prev) => [...prev, { sender: "bot", text: "PhuStore xin chào! Đợi ít phút có nhân viên hỗ trợ bạn nha" }]);
       if (!socket) {

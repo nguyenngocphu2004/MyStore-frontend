@@ -15,6 +15,9 @@ function Profile() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 5;
   const token = localStorage.getItem("token");
 
   const [confirmData, setConfirmData] = useState({
@@ -68,14 +71,23 @@ function Profile() {
       .catch(err => console.error(err));
   };
 
-  const fetchOrders = () => {
-    fetch("http://localhost:5000/orders", {
-      headers: { Authorization: `Bearer ${token}` },
+  const fetchOrders = (page = 1) => {
+  fetch(`http://localhost:5000/orders?page=${page}&per_page=${itemsPerPage}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then(res => res.json())
+    .then(data => {
+      setOrders(data.orders || []);
+      setCurrentPage(data.page);
+      setTotalPages(data.total_pages);
+
+      window.scrollTo({
+        top: 0,          // cuộn lên đầu trang
+        behavior: "smooth" // hiệu ứng mượt
+      });
     })
-      .then(res => res.json())
-      .then(data => setOrders(data.orders || []))
-      .catch(err => console.error(err));
-  };
+    .catch(err => console.error(err));
+};
 
   const fetchOrderDetail = (orderId) => {
     fetch(`http://localhost:5000/admin/orders/${orderId}`, {
@@ -310,6 +322,43 @@ function Profile() {
 </ul>
 
               )}
+ <div className="d-flex justify-content-center mt-4">
+  <nav>
+    <ul className="pagination mb-0">
+      <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+        <button
+          className={`btn btn-sm ${currentPage === 1 ? "btn-secondary" : "btn-warning"} me-2`}
+          onClick={() => fetchOrders(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Trước
+        </button>
+      </li>
+
+      {[...Array(totalPages)].map((_, idx) => (
+        <li key={idx} className="page-item">
+          <button
+            className={`btn btn-sm ${currentPage === idx + 1 ? "btn-warning" : "btn-outline-warning"} me-2`}
+            onClick={() => fetchOrders(idx + 1)}
+          >
+            {idx + 1}
+          </button>
+        </li>
+      ))}
+
+      <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+        <button
+          className={`btn btn-sm ${currentPage === totalPages ? "btn-secondary" : "btn-warning"}`}
+          onClick={() => fetchOrders(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Sau
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
             </div>
           </div>
         </div>

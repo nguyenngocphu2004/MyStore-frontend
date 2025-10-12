@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   FaChevronLeft,
@@ -216,8 +216,6 @@ function ProductDetail() {
 
   return (
     <div className="container py-4">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       <div className="row">
         {/* Ảnh sản phẩm */}
         <div className="col-md-5 text-center">

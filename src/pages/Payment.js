@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
-import { toast, ToastContainer } from "react-toastify";
+import { toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function Payment() {
@@ -98,8 +98,6 @@ function Payment() {
 
   return (
     <div className="container my-5 d-flex justify-content-center">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       <div className="card shadow-lg" style={{ maxWidth: "500px", width: "100%" }}>
         <div
           className="card-header bg-warning text-center"

@@ -167,7 +167,7 @@ export default function AdminComments() {
                           <span className="fw-semibold">
                             {c.username || c.guest_name || "Guest"}
                           </span>{" "}
-                          ({c.created_at})
+                          ({new Date(c.created_at).toLocaleString("vi-VN")})
                         </p>
                         <p>{c.content}</p>
                         <p>

@@ -104,7 +104,7 @@ export default function AdminOrders() {
             <th>SĐT</th>
             <th>Ngày tạo</th>
             <th>Tổng tiền</th>
-            <th>Phương thức</th>
+            <th>Nhận hàng</th>
             <th>Số món</th>
             <th>Trạng thái giao hàng</th>
             <th>Trạng thái thanh toán</th>
@@ -117,9 +117,15 @@ export default function AdminOrders() {
               <td>{order.id}</td>
               <td>{order.user ? order.user.username : order.guest_name || "Ẩn danh"}</td>
               <td>{order.user ? order.user.phone : order.guest_phone || "-"}</td>
-              <td>{order.created_at}</td>
+              <td>{new Date(order.created_at).toLocaleString("vi-VN")}</td>
               <td>{Number(order.total_price).toLocaleString("vi-VN")}₫</td>
-              <td>{order.delivery_method}</td>
+              <td>
+                  {order.delivery_method === "store"
+                    ? "Cửa hàng"
+                    : order.delivery_method === "home"
+                    ? "Nhận tại nhà"
+                    : order.delivery_method}
+              </td>
               <td>{order.items_count}</td>
               <td>
                 {order.status === "CANCELED" || order.status === "FAILED" ? (

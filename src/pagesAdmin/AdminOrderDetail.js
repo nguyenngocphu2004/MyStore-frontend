@@ -32,13 +32,20 @@ export default function AdminOrderDetail() {
         &lt; Quay lại
       </button>
 
-      <h2>Chi tiết đơn hàng #{order.id}</h2>
+      <h2>Chi tiết đơn hàng #{order.order_code}</h2>
       <p>
         <strong>Khách/User:</strong> {order.user ? order.user.username : order.guest_name || "Ẩn danh"} <br />
         <strong>SĐT:</strong> {order.user ? order.user.phone : order.guest_phone || "-"} <br />
-        <strong>Ngày tạo:</strong> {order.created_at} <br />
-        <strong>Địa chỉ:</strong> {order.address || "-"} <br />
-        <strong>Phương thức:</strong> {order.delivery_method} <br />
+        <strong>Ngày tạo:</strong> {new Date(order.created_at).toLocaleString("vi-VN")} <br />
+        <strong>Địa chỉ:</strong> {order.address || "Không có"} <br />
+        <strong>Phương thức thanh toán:</strong> {order.payment_method} <br />
+        <strong>Nhận hàng:</strong>{" "}
+            {order.delivery_method === "store"
+              ? "Cửa hàng"
+              : order.delivery_method === "home"
+              ? "Nhận tại nhà"
+              : order.delivery_method}
+        <br/>
         <strong>Tổng tiền:</strong> {Number(order.total_price).toLocaleString("vi-VN")}₫
       </p>
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {BiTrash, BiEdit,BiDetail,BiSearch } from "react-icons/bi";
+import { toast } from "react-toastify";
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -90,8 +91,25 @@ export default function AdminProducts() {
   }, [page]);
 
   // Handle form change
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  // Các trường chỉ cho phép giá trị >= 0
+  const numericFields = ["price", "cost_price", "stock"];
+  if (numericFields.includes(name) && value < 0) {
+    const fieldName =
+      name === "price"
+        ? "Giá"
+        : name === "cost_price"
+        ? "Giá nhập"
+        : "Số lượng";
+
+    toast.error(`${fieldName} phải lớn hơn 0!`);
+    return;
+  }
+
+  setForm({ ...form, [name]: value });
+};
   const handleFileChange = (e) => setImages(e.target.files);
 
   // Add / Edit product
@@ -247,6 +265,8 @@ export default function AdminProducts() {
             placeholder="Giá"
             className="form-control"
             required
+            min="1"
+            step="10000"
           />
         </div>
         <div className="col-md-3">
@@ -608,9 +628,34 @@ export default function AdminProducts() {
               <tbody>
                 {Object.entries(detailProduct).map(([key, value]) => {
                   if (key === "images") return null;
+                  const fieldLabels = {
+                      id: "Mã sản phẩm",
+                      name: "Tên sản phẩm",
+                      camera_front: "Camera trước",
+                      camera_rear: "Camera sau",
+                      color: "Màu sắc",
+                      cpu: "CPU",
+                      dimensions: "Kích thước",
+                      graphics_card: "Card đồ họa",
+                      os: "Hệ điều hành",
+                      ports: "Cổng sạc",
+                      ram: "RAM",
+                      release_date : "Ngày sản xuất",
+                      screen:"Màn hình",
+                      sold: "Đã bán",
+                      storage: "Bộ nhớ",
+                      warranty: "Bảo hành",
+                      weight: "Khối lượng",
+                      price: "Giá bán",
+                      cost_price: "Giá nhập",
+                      stock: "Số lượng tồn",
+                      category: "Danh mục",
+                      brand: "Thương hiệu",
+                      battery: "Pin"
+                  };
                   return (
                     <tr key={key}>
-                      <th style={{ width: "30%" }}>{key}</th>
+                      <th style={{ width: "30%" }}>{fieldLabels[key] || key}</th>
                       <td>{value || "-"}</td>
                     </tr>
                   );

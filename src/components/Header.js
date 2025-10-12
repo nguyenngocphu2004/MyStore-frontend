@@ -1,8 +1,8 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
-import { BiSearch } from "react-icons/bi";
+import { toast} from "react-toastify";
+import { BiSearch,BiCart } from "react-icons/bi";
 import "react-toastify/dist/ReactToastify.css";
 
 function Header() {
@@ -240,7 +240,7 @@ function Header() {
               }}
               title="Giỏ hàng"
             >
-              🛒
+              <BiCart size={25}/>
               {cartCount > 0 && (
                 <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                   {cartCount}
@@ -262,19 +262,6 @@ function Header() {
           </div>
         </div>
       </header>
-
-      {/* ToastContainer */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
     </>
   );
 }
