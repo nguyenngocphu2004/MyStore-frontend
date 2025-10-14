@@ -184,25 +184,46 @@ function Cart() {
                   <td>{item.name}</td>
                   <td>{Number(item.unit_price).toLocaleString("vi-VN")}₫</td>
                   <td>
-                    <div className="d-flex gap-2 align-items-center">
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => updateQuantity(item.id, -1)}
-                      >
-                        -
-                      </button>
-                      {item.quantity}
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => updateQuantity(item.id, 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td>
-                    {(item.unit_price * item.quantity).toLocaleString("vi-VN")}₫
-                  </td>
+  <div className="d-flex flex-column">
+    <div className="d-flex gap-2 align-items-center">
+      <button
+        className="btn btn-sm btn-outline-secondary"
+        onClick={() => updateQuantity(item.id, -1)}
+        disabled={item.quantity <= 1}
+      >
+        -
+      </button>
+      {item.quantity}
+      <button
+        className="btn btn-sm btn-outline-secondary"
+        onClick={() => updateQuantity(item.id, 1)}
+        disabled={item.quantity >= 5}
+      >
+        +
+      </button>
+    </div>
+    {/* Không thay đổi layout dù chưa hiển thị thông báo */}
+    <small
+      className="mt-1"
+      style={{
+        minHeight: "1em", // đảm bảo luôn chiếm chiều cao
+        color: item.quantity >= 5 ? "red" : "transparent",
+        transition: "color 0.3s",
+      }}
+    >
+      Tối đa 5 sản phẩm.
+    </small>
+  </div>
+</td>
+                  <td
+  style={{
+    width: "130px",       // hoặc chỉnh theo ý bạn
+    whiteSpace: "nowrap", // không xuống dòng, giữ nguyên trên 1 dòng
+    textAlign: "left",   // canh phải cho tiền nhìn đẹp
+  }}
+>
+  {(item.unit_price * item.quantity).toLocaleString("vi-VN")}₫
+</td>
                   <td>
                     <button
                       className="btn btn-sm btn-danger"

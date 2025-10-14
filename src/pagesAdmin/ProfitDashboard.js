@@ -167,7 +167,7 @@ export default function ProfitDashboard() {
             <th>Doanh thu</th>
             <th>Chi phí gốc</th>
             <th>Tổng chi phí</th>
-            <th>Lợi nhuận mới</th>
+            <th>Lợi nhuận</th>
           </tr>
         </thead>
         <tbody>
@@ -179,7 +179,12 @@ export default function ProfitDashboard() {
 
             return (
               <tr key={month}>
-                <td>{month}</td>
+                <td style={{ whiteSpace: "nowrap" }}>
+  {(() => {
+    const [year, monthPart] = month.split("-");
+    return `${monthPart}/${year}`;
+  })()}
+</td>
                 {["staff", "rent", "living", "other"].map((key) => (
                   <td key={key}>
                     <input
@@ -191,11 +196,22 @@ export default function ProfitDashboard() {
                     />
                   </td>
                 ))}
-                <td>{extraTotal.toLocaleString()}</td>
-                <td>{revenue.toLocaleString()}</td>
-                <td>{cost.toLocaleString()}</td>
-                <td>{totalCost.toLocaleString()}</td>
-                <td>{profitNew.toLocaleString()}</td>
+                <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+  {Number(extraTotal).toLocaleString("vi-VN")} đ
+</td>
+<td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+  {Number(revenue).toLocaleString("vi-VN")} đ
+</td>
+<td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+  {Number(cost).toLocaleString("vi-VN")} đ
+</td>
+<td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+  {Number(totalCost).toLocaleString("vi-VN")} đ
+</td>
+<td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+  {Number(profitNew).toLocaleString("vi-VN")} đ
+</td>
+
               </tr>
             );
           })}

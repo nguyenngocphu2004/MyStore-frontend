@@ -473,7 +473,7 @@ export default function AdminProducts() {
       <tr key={p.id}>
         <td>{p.id}</td>
         <td>{p.name}</td>
-        <td>{p.price}</td>
+        <td>{Number(p.price).toLocaleString("vi-VN")} đ</td>
         <td>{p.brand}</td>
         <td>{p.category}</td>
         <td>

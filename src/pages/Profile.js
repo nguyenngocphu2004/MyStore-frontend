@@ -285,8 +285,8 @@ function Profile() {
     <li key={order.id} className="list-group-item position-relative" style={{ minHeight: "140px" }}>
       <div>
         <div><strong>Mã đơn:</strong> {`#${order.order_code}` || `#${order.id}`}</div>
-        <div><strong>Ngày đặt:</strong> {new Date(order.created_at).toLocaleString()}</div>
-        <div><strong>Tổng tiền:</strong> {order.total_price?.toLocaleString()} VND</div>
+        <div><strong>Ngày đặt:</strong> {new Date(order.created_at).toLocaleString("vi-VN")}</div>
+        <div><strong>Tổng tiền:</strong> {Number(order.total_price).toLocaleString("vi-VN")} VND</div>
         <div><strong>Trạng thái:</strong> {STATUS_TEXT[order.status]}</div>
         <div><strong>Trạng thái giao hàng:</strong> {DELIVERY_TEXT[order.delivery_status]}</div>
       </div>
@@ -391,7 +391,7 @@ function Profile() {
                     <li><strong>Người đặt:</strong> {selectedOrder.user?.username || selectedOrder.guest_name}</li>
                     <li><strong>SĐT:</strong> {selectedOrder.user?.phone || selectedOrder.guest_phone}</li>
                     <li><strong>Địa chỉ:</strong> {selectedOrder.address}</li>
-                    <li><strong>Ngày đặt:</strong> {selectedOrder.created_at}</li>
+                    <li><strong>Ngày đặt:</strong> {new Date(selectedOrder.created_at).toLocaleString("vi-VN")}</li>
                     <li>
                       <strong>Phương thức thanh toán:</strong>{" "}
                       {selectedOrder.payment_method === "COD" && <span>Thanh toán khi nhận hàng</span>}
@@ -400,9 +400,9 @@ function Profile() {
                     </li>
                     <li>
   <strong>Nhận hàng tại:</strong>{" "}
-  {selectedOrder.delivery_method === "store" ? "Nhận tại cửa hàng" : "Giao hàng tận nhà"}
+  {selectedOrder.delivery_method === "store" ? "Cửa hàng" : "Giao hàng tận nhà"}
 </li>
-                    <li><strong>Tổng tiền:</strong> <span className="text-danger fw-bold">{selectedOrder.total_price?.toLocaleString()} VND</span></li>
+                    <li><strong>Tổng tiền:</strong> <span className="text-danger fw-bold">{Number(selectedOrder.total_price).toLocaleString("vi-VN")} VNĐ</span></li>
                   </ul>
                 </div>
 
@@ -412,7 +412,7 @@ function Profile() {
                     <table className="table table-striped table-hover align-middle">
                       <thead className="table-light">
                         <tr>
-                          <th>#</th>
+                          <th>STT</th>
                           <th>Tên sản phẩm</th>
                           <th className="text-center">Số lượng</th>
                           <th className="text-end">Đơn giá</th>
@@ -425,8 +425,8 @@ function Profile() {
                             <td>{idx + 1}</td>
                             <td>{item.product_name}</td>
                             <td className="text-center">{item.quantity}</td>
-                            <td className="text-end">{item.unit_price.toLocaleString()} VND</td>
-                            <td className="text-end">{item.total_price.toLocaleString()} VND</td>
+                            <td className="text-end">{Number(item.unit_price).toLocaleString("vi-VN")} VNĐ</td>
+                            <td className="text-end">{Number(item.total_price).toLocaleString("vi-VN")} VND</td>
                           </tr>
                         ))}
                       </tbody>

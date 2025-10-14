@@ -83,7 +83,7 @@ export default function AdminDashboard() {
       <h2>Thống kê</h2>
       <div className="mb-3">
         <strong>Tổng doanh thu:</strong>{" "}
-        {(stats.total_revenue || 0).toLocaleString()} VNĐ
+        {Number(stats.total_revenue).toLocaleString("vi-VN")} VNĐ
       </div>
       <div className="mb-3">
         <strong>Tổng đơn hàng:</strong> {stats.total_orders || 0}

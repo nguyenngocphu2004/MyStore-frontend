@@ -32,7 +32,7 @@ function Home() {
       subtitle: "Camera siêu nét",
     },
     {
-      img: "https://res.cloudinary.com/dbnra16ca/image/upload/v1757226916/pexels-jessbaileydesign-788946_dxyrul.jpg",
+      img: "https://res.cloudinary.com/dbnra16ca/image/upload/v1760436395/iphone-17-pro-max_awnzgm.jpg",
       title: "Siêu phẩm mới",
       subtitle: "Hàng chính hãng giá tốt",
     },

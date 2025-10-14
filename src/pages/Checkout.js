@@ -182,15 +182,25 @@ function Checkout() {
           <form onSubmit={handleSubmit} className="mt-3">
             {/* Số lượng */}
             <div className="mb-3">
-              <label>Số lượng:</label>
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="form-control"
-              />
-            </div>
+  <label>Số lượng:</label>
+  <input
+    type="number"
+    min={1}
+    value={quantity}
+    onChange={(e) => {
+      const value = Number(e.target.value);
+      if (!isNaN(value)) {
+        setQuantity(value);
+      }
+    }}
+    className="form-control"
+  />
+  {quantity > 5 && (
+    <small className="text-danger">
+      Bạn chỉ có thể mua tối đa 5 sản phẩm.
+    </small>
+  )}
+</div>
 
             {/* Thông tin khách / user */}
             <div className="mb-3">

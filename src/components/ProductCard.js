@@ -92,8 +92,11 @@ function ProductCard({ product }) {
         <h6 className="fw-semibold text-truncate">{product.name}</h6>
 
         <small className="text-muted mb-1">
-          Đã bán: <span className="fw-bold">{product.sold}</span>
-        </small>
+  Đã bán:{" "}
+  <span className="fw-bold">
+    {product.sold > 1000 ? "1K+" : product.sold}
+  </span>
+</small>
 
         <p className="text-danger fw-bold mb-3" style={{ fontSize: "1.1rem" }}>
           {product.price.toLocaleString("vi-VN")}₫

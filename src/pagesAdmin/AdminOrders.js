@@ -118,7 +118,7 @@ export default function AdminOrders() {
               <td>{order.user ? order.user.username : order.guest_name || "Ẩn danh"}</td>
               <td>{order.user ? order.user.phone : order.guest_phone || "-"}</td>
               <td>{new Date(order.created_at).toLocaleString("vi-VN")}</td>
-              <td>{Number(order.total_price).toLocaleString("vi-VN")}₫</td>
+              <td>{Number(order.total_price).toLocaleString("vi-VN")} đ</td>
               <td>
                   {order.delivery_method === "store"
                     ? "Cửa hàng"

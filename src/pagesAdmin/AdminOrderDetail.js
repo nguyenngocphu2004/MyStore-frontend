@@ -46,7 +46,7 @@ export default function AdminOrderDetail() {
               ? "Nhận tại nhà"
               : order.delivery_method}
         <br/>
-        <strong>Tổng tiền:</strong> {Number(order.total_price).toLocaleString("vi-VN")}₫
+        <strong>Tổng tiền:</strong> {Number(order.total_price).toLocaleString("vi-VN")} đ
       </p>
 
       <h4>Chi tiết món hàng</h4>
@@ -64,8 +64,8 @@ export default function AdminOrderDetail() {
             <tr key={idx}>
               <td>{item.product_name}</td>
               <td>{item.quantity}</td>
-              <td>{Number(item.unit_price).toLocaleString("vi-VN")}₫</td>
-              <td>{Number(item.total_price).toLocaleString("vi-VN")}₫</td>
+              <td>{Number(item.unit_price).toLocaleString("vi-VN")} đ</td>
+              <td>{Number(item.total_price).toLocaleString("vi-VN")} đ</td>
             </tr>
           ))}
         </tbody>
