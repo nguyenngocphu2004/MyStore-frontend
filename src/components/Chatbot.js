@@ -108,11 +108,14 @@ function Chatbot() {
   };
 
   useEffect(() => {
-    chatRef.current?.scrollTo({
+  if (isOpen && chatRef.current) {
+    chatRef.current.scrollTo({
       top: chatRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, loading]);
+  }
+}, [messages, loading, isOpen]);
+
 
   return (
     <>

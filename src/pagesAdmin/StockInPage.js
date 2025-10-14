@@ -294,6 +294,7 @@ function StockIn() {
                     <th>Sản phẩm</th>
                     <th>Số lượng</th>
                     <th>Giá nhập</th>
+                    <th>Tổng tiền</th>
                     <th>Ngày nhập</th>
                     <th>Người nhập</th>
                     <th>Hành động</th>
@@ -327,7 +328,8 @@ function StockIn() {
                             value={formatPrice(editEntry.price)}
                             onChange={handleEditChange}
                           />
-                        ) : entry.price.toLocaleString() + " đ"}</td>
+                        ) : entry.price.toLocaleString("vi-VN")} đ</td>
+                        <td>{entry.total.toLocaleString("vi-VN")} đ</td>
                         <td>{new Date(entry.date).toLocaleString("vi-VN")}</td>
                         <td>{entry.imported_by}</td>
                         <td>

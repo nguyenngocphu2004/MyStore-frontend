@@ -1,12 +1,14 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
-import { toast} from "react-toastify";
-import { BiSearch,BiCart } from "react-icons/bi";
+import { toast } from "react-toastify";
+import { BiSearch, BiCart, BiX } from "react-icons/bi";
 import "react-toastify/dist/ReactToastify.css";
 
 function Header() {
   const [search, setSearch] = useState("");
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [showRecent, setShowRecent] = useState(false);
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
@@ -14,8 +16,20 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem("token");
+  const fetchUserSearches = useCallback(async () => {
+  if (!token) return;
 
-  // Load user
+  try {
+    const res = await axios.get("http://localhost:5000/get_searches", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setRecentSearches(res.data);
+  } catch (err) {
+    console.error("Lỗi khi tải lịch sử tìm kiếm:", err);
+  }
+}, [token]);
+
+  // 🔹 Load user info
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
     if (storedUser) setUser(storedUser);
@@ -29,6 +43,7 @@ function Header() {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+        setShowRecent(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -39,14 +54,25 @@ function Header() {
     };
   }, []);
 
-  // Reset search khi rời trang /search
+  // 🔹 Load recent searches
+  useEffect(() => {
+  if (token) {
+    fetchUserSearches();
+  } else {
+    const storedSearches = JSON.parse(localStorage.getItem("recentSearches")) || [];
+    setRecentSearches(storedSearches);
+  }
+}, [token, fetchUserSearches]);
+
+
+  // 🔹 Reset search khi rời trang /search
   useEffect(() => {
     if (!location.pathname.startsWith("/search")) {
       setSearch("");
     }
   }, [location.pathname]);
 
-  // Fetch cart count
+  // 🔹 Fetch cart count
   const fetchCartCount = useCallback(async () => {
     if (!token) return;
     try {
@@ -68,11 +94,61 @@ function Header() {
     };
   }, [fetchCartCount]);
 
+  // 🔹 Lưu tìm kiếm gần đây
+  const saveSearch = async (keyword) => {
+  if (!keyword) return;
+
+  // Chưa đăng nhập → lưu localStorage
+  if (!token) {
+    let updated = [keyword, ...recentSearches.filter((k) => k !== keyword)];
+    if (updated.length > 10) updated = updated.slice(0, 10);
+    setRecentSearches(updated);
+    localStorage.setItem("recentSearches", JSON.stringify(updated));
+  }
+  // Đã đăng nhập → lưu DB
+  else {
+    try {
+      await axios.post(
+        "http://localhost:5000/save_search",
+        { keyword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Sau khi lưu, gọi lại API để cập nhật danh sách hiển thị
+      fetchUserSearches();
+    } catch (err) {
+      console.error("Lỗi khi lưu tìm kiếm:", err);
+    }
+  }
+};
+
+  // 🔹 Khi người dùng tìm kiếm
   const handleSearch = () => {
     if (search.trim() !== "") {
+      saveSearch(search.trim());
+      setShowRecent(false);
       navigate(`/search?q=${encodeURIComponent(search.trim())}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  };
+
+  // 🔹 Chọn tìm kiếm gần đây
+  const handleSelectRecent = (keyword) => {
+    setSearch(keyword);
+    setShowRecent(false);
+    navigate(`/search?q=${encodeURIComponent(keyword)}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // 🔹 Xóa từng tìm kiếm
+  const handleRemoveRecent = (keyword) => {
+    const updated = recentSearches.filter((k) => k !== keyword);
+    setRecentSearches(updated);
+    localStorage.setItem("recentSearches", JSON.stringify(updated));
+  };
+
+  const clearAll = () => {
+    localStorage.removeItem("recentSearches");
+    setRecentSearches([]);
   };
 
   const goToChangePassword = () => {
@@ -93,7 +169,6 @@ function Header() {
     setUser(null);
     setDropdownOpen(false);
     setCartCount(0);
-
     toast.success("Đăng xuất thành công!", { autoClose: 2000 });
     navigate("/");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -125,27 +200,9 @@ function Header() {
 
           {/* Menu */}
           <nav className="d-none d-md-flex gap-3 fw-medium me-4">
-            <Link
-              to="/phones"
-              className="text-dark text-decoration-none"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            >
-              Điện thoại
-            </Link>
-            <Link
-              to="/laptops"
-              className="text-dark text-decoration-none"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            >
-              Laptop
-            </Link>
-            <Link
-              to="/aboutus"
-              className="text-dark text-decoration-none"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            >
-              Về chúng tôi
-            </Link>
+            <Link to="/phones" className="text-dark text-decoration-none">Điện thoại</Link>
+            <Link to="/laptops" className="text-dark text-decoration-none">Laptop</Link>
+            <Link to="/aboutus" className="text-dark text-decoration-none">Về chúng tôi</Link>
           </nav>
 
           {/* Search + Icons */}
@@ -157,6 +214,7 @@ function Header() {
                 className="form-control"
                 placeholder="Tìm sản phẩm"
                 value={search}
+                onFocus={() => setShowRecent(true)}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 style={{
@@ -176,21 +234,61 @@ function Header() {
                   transform: "translateY(-50%)",
                   color: "#888",
                   fontSize: "20px",
-                  pointerEvents: "none",
                 }}
+                onClick={handleSearch}
               />
+
+              {/* Recent searches dropdown */}
+              {showRecent && recentSearches.length > 0 && (
+  <div
+    className="position-absolute bg-white border rounded shadow-sm mt-1 w-100"
+    style={{ zIndex: 2000, maxHeight: "250px", overflowY: "auto" }}
+  >
+    <div className="d-flex justify-content-between align-items-center p-2 text-muted small border-bottom">
+      <span>Tìm kiếm gần đây</span>
+      <button
+        className="btn btn-sm btn-link text-danger text-decoration-none"
+        onClick={(e) => {
+          e.stopPropagation();
+          clearAll();
+        }}
+      >
+        Xóa tất cả
+      </button>
+    </div>
+
+    {recentSearches.map((item, idx) => (
+      <div
+        key={idx}
+        className="d-flex justify-content-between align-items-center px-3 py-2 recent-item"
+        style={{ cursor: "pointer" }}
+        onClick={() => handleSelectRecent(item)}
+      >
+        <span>{item}</span>
+        <BiX
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveRecent(item);
+          }}
+          style={{ color: "gray", cursor: "pointer" }}
+        />
+      </div>
+    ))}
+  </div>
+)}
+
             </div>
 
             {/* User */}
             {user ? (
               <div className="position-relative">
                 <button
-  className="btn btn-outline-dark"
-  onClick={() => setDropdownOpen(!dropdownOpen)}
-  title={user}
->
-  {user.length > 6 ? user.slice(0, 6) + "..." : user} ▼
-</button>
+                  className="btn btn-outline-dark"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  title={user}
+                >
+                  {user.length > 6 ? user.slice(0, 6) + "..." : user} ▼
+                </button>
 
                 {dropdownOpen && (
                   <div
@@ -212,35 +310,28 @@ function Header() {
                     <button className="dropdown-item" onClick={goToChangePassword}>
                       Đổi mật khẩu
                     </button>
-                    <button
-                      className="dropdown-item text-danger"
-                      onClick={handleLogout}
-                    >
+                    <button className="dropdown-item text-danger" onClick={handleLogout}>
                       Đăng xuất
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="btn btn-outline-dark"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              >
+              <Link to="/login" className="btn btn-outline-dark" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 Đăng nhập
               </Link>
             )}
 
             {/* Cart */}
             <button
-              className="btn position-relative btn-outline-dark cart-icon"
+              className="btn position-relative btn-outline-dark"
               onClick={() => {
                 navigate("/cart");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               title="Giỏ hàng"
             >
-              <BiCart size={25}/>
+              <BiCart size={25} />
               {cartCount > 0 && (
                 <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                   {cartCount}
@@ -255,7 +346,6 @@ function Header() {
                 navigate("/guest-orders");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              title="Tra cứu đơn hàng"
             >
               Tra cứu đơn hàng
             </button>
