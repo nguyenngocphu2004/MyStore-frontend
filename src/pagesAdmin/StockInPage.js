@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BiPackage, BiHistory, BiTrash, BiEdit, BiPlus, BiCalendar,BiSearch } from "react-icons/bi";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import ConfirmModal from "../components/ConfirmModal";
+import { toast } from "react-toastify";
 import LogsModal from "../components/LogsModal";
 
 
@@ -19,7 +17,7 @@ function StockIn() {
   // form nhiều sản phẩm
 
   const [items, setItems] = useState([
-    { product_id: "", quantity: "", price: "" },
+    { product_id: "", quantity: "", price: ""},
   ]);
 
   const [editEntry, setEditEntry] = useState(null);
@@ -29,10 +27,6 @@ function StockIn() {
   const perPage = 10;
 
   const token = localStorage.getItem("adminToken");
-
-  // Modal xóa
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
 
   const formatPrice = (value) =>
     value ? new Intl.NumberFormat("vi-VN").format(value) : "";
@@ -81,7 +75,7 @@ function StockIn() {
 
   // Thêm dòng mới
   const addRow = () => {
-    setItems([...items, { product_id: "", quantity: "", price: "" }]);
+    setItems([...items, { product_id: "", quantity: "", price: ""}]);
   };
 
   // Xóa dòng
@@ -148,8 +142,6 @@ function StockIn() {
 
   return (
     <div className="container p-4">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       {/* Tabs */}
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item">
@@ -182,7 +174,7 @@ function StockIn() {
               <tr>
                 <th>Sản phẩm</th>
                 <th>Số lượng</th>
-                <th>Giá</th>
+                <th>Giá (VND)</th>
                 <th></th>
               </tr>
             </thead>
@@ -213,9 +205,15 @@ function StockIn() {
                       value={item.quantity}
                       min="1"
                       required
-                      onChange={(e) =>
-                        handleItemChange(idx, "quantity", e.target.value)
-                      }
+                      onChange={(e) => {
+      const value = Number(e.target.value);
+
+      if (value < 1 || value > 10000) {
+        toast.error("Số lượng phải từ 1 đến 10000");
+      }
+
+      handleItemChange(idx, "quantity", value);
+    }}
                     />
                   </td>
                   <td>
@@ -265,6 +263,11 @@ function StockIn() {
     placeholder="Tìm theo sản phẩm hoặc người nhập"
     value={search}
     onChange={(e) => setSearch(e.target.value)}
+    onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      fetchHistory(1);
+    }
+  }}
   />
   <select
     className="form-select me-2"
@@ -293,7 +296,7 @@ function StockIn() {
                     <th>ID</th>
                     <th>Sản phẩm</th>
                     <th>Số lượng</th>
-                    <th>Giá nhập</th>
+                    <th>Giá nhập (VND)</th>
                     <th>Tổng tiền</th>
                     <th>Ngày nhập</th>
                     <th>Người nhập</th>

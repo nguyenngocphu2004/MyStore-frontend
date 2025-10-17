@@ -20,6 +20,10 @@ function Home() {
       .catch((err) => console.error("Lỗi khi fetch products:", err));
   }, [page]);
 
+  useEffect(() => {
+  window.scrollTo({ top: 400, behavior: "smooth" });
+}, [page]);
+
   const slides = [
     {
       img: "https://res.cloudinary.com/dbnra16ca/image/upload/v1757226918/pexels-pixabay-4158_xkfapw.jpg",

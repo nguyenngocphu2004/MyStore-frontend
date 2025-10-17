@@ -9,6 +9,7 @@ function Chatbot() {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isChatWithAdmin, setIsChatWithAdmin] = useState(false);
+  const preAdminMessages = useRef([]);
   const chatRef = useRef(null);
 
   const quickReplies = ["Gặp quản trị viên", "Hỗ trợ kỹ thuật"];
@@ -42,24 +43,32 @@ function Chatbot() {
 
     const userMessage = { sender: "user", text: msgText };
     setMessages((prev) => [...prev, userMessage]);
+    if (!isChatWithAdmin) {
+        preAdminMessages.current.push(userMessage);
+    }
 
     if (msgText === "Gặp quản trị viên" || msgText === "Hỗ trợ kỹ thuật") {
       setIsChatWithAdmin(true);
       setMessages((prev) => [...prev, { sender: "bot", text: "PhuStore xin chào! Đợi ít phút có nhân viên hỗ trợ bạn nha" }]);
+      const connectAndSend = () => {
+      socket.emit("client-join-admin-chat");
+      socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
+
+      // Gửi toàn bộ tin nhắn đã lưu cho admin
+      preAdminMessages.current.forEach((msg) => {
+      socket.emit("client-message", msg.text);
+      });
+
+      // Xoá bộ nhớ tạm
+      preAdminMessages.current = [];
+      };
       if (!socket) {
         connectToSocket();
-        socket.once("connect", () => {
-          socket.emit("client-join-admin-chat");
-          socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
-        });
+        socket.once("connect", connectAndSend);
       } else if (socket.connected) {
-        socket.emit("client-join-admin-chat");
-        socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
+        connectAndSend();
       } else {
-        socket.once("connect", () => {
-          socket.emit("client-join-admin-chat");
-          socket.emit("client-message", "Khách hàng muốn gặp quản trị viên");
-        });
+        socket.once("connect", connectAndSend);
       }
       return;
     }

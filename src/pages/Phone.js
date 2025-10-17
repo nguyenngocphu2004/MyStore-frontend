@@ -10,13 +10,33 @@ function Phone() {
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("Tất cả");
   const [showFilters, setShowFilters] = useState(false);
-
   // Bộ lọc nâng cao
+  const [rams, setRams] = useState([]);
+  const [cpus, setCpus] = useState([]);
   const [priceRange, setPriceRange] = useState("");
   const [stockOnly, setStockOnly] = useState(false);
   const [selectedRam, setSelectedRam] = useState("");
   const [selectedCpu, setSelectedCpu] = useState("");
   const [minBattery, setMinBattery] = useState("");
+  const extractRams = (products) => {
+  const ramSet = new Set();
+  products.forEach((p) => {
+    if (p.ram) {
+      ramSet.add(p.ram.trim());
+    }
+  });
+  return Array.from(ramSet).sort((a, b) => parseInt(a) - parseInt(b));
+  };
+  const extractCpuBrands = (products) => {
+  const cpuSet = new Set();
+  products.forEach((p) => {
+    const match = p.cpu?.match(/^\w+/); // Lấy từ đầu tiên (Snapdragon, MediaTek,...)
+    if (match) {
+      cpuSet.add(match[0]);
+    }
+  });
+  return Array.from(cpuSet).sort();
+  };
 
   // Phân trang
   const [page, setPage] = useState(1);
@@ -36,9 +56,17 @@ function Phone() {
         // Lọc ra những brand có điện thoại
         const phoneBrands = [...new Set(phones.map((p) => p.brand))];
         setBrands(phoneBrands);
+        const extractedCpus = extractCpuBrands(phones);
+        const extractedRams = extractRams(phones);
+
+        setCpus(extractedCpus);
+        setRams(extractedRams);
       })
       .catch((err) => console.error(err));
   }, []);
+   useEffect(() => {
+  window.scrollTo({ top: 100, behavior: "smooth" });
+}, [page]);
 
   // Lọc sản phẩm
   useEffect(() => {

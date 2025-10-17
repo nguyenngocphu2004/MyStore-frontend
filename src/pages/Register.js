@@ -29,10 +29,14 @@ function Register() {
   // validate từng field
   const validateField = (name, value) => {
     let error = "";
-
     if (name === "username") {
       if (value.length < 6) {
         error = "Tên tài khoản phải có từ 6 kí tự";
+      }
+    }
+    if (name === "username") {
+      if (value.length > 20) {
+        error = "Tên tài khoản dưới 20 kí tự";
       }
     }
 

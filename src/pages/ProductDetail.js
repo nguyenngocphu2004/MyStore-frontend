@@ -31,6 +31,7 @@ function ProductDetail() {
   const [replyContent, setReplyContent] = useState("");
   const [userRole, setUserRole] = useState(null);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
+  const [expandedComments, setExpandedComments] = useState(new Set());
   const [added, setAdded] = useState(false);
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
@@ -47,6 +48,18 @@ function ProductDetail() {
       })
       .catch((err) => toast.error("Lỗi khi lấy chi tiết sản phẩm"));
   }, [id]);
+  const toggleExpand = (commentId) => {
+  setExpandedComments(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(commentId)) {
+      newSet.delete(commentId);
+    } else {
+      newSet.add(commentId);
+    }
+    return newSet;
+  });
+};
+
 
   // Lấy bình luận
   useEffect(() => {
@@ -90,6 +103,10 @@ function ProductDetail() {
   // ------------------- Bình luận -------------------
   const handleSubmitComment = async (e) => {
     e.preventDefault();
+    if (newComment.length > 100) {
+      toast.warning("Bình luận tối đa 100 ký tự");
+      return;
+    }
     if (!newComment.trim() || rating === 0) {
       toast.warning("Vui lòng nhập bình luận và chọn số sao");
       return;
@@ -296,7 +313,28 @@ function ProductDetail() {
                         <FaStar key={star} size={16} color={cmt.rating >= star ? "#ffc107" : "#e4e5e9"} />
                       ))}
                     </div>
-                    <span>{cmt.content}</span>
+                    <span style={{ whiteSpace: "pre-wrap" }}>
+    {expandedComments.has(cmt.id) || cmt.content.length <= 30
+      ? cmt.content
+      : cmt.content.slice(0, 30) + "... "}
+    {cmt.content.length > 30 && (
+      <span
+        onClick={() => toggleExpand(cmt.id)}
+        style={{
+          color: "#1877f2",
+          cursor: "pointer",
+          fontSize: "0.85rem",
+          userSelect: "none",
+          fontWeight: 500,
+          marginLeft: 4,
+        }}
+        onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+        onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+      >
+        {expandedComments.has(cmt.id) ? "Thu gọn" : "Xem thêm"}
+      </span>
+    )}
+  </span>
                   </div>
                   <div className="d-flex align-items-center gap-2 mt-1">
                     <button className="btn btn-sm btn-outline-primary" onClick={()=> handleVote(cmt.id, "like")}>
@@ -343,7 +381,7 @@ function ProductDetail() {
                   <FaStar key={star} size={24} onClick={()=> setRating(star)} style={{ cursor:"pointer", color: rating>=star ? "#ffc107": "#e4e5e9", marginRight:"4px"}}/>
                 ))}
               </div>
-              <textarea className="form-control mb-2" placeholder="Nhập bình luận..." rows="3" value={newComment} onChange={e=> setNewComment(e.target.value)} required/>
+              <textarea className="form-control mb-2" placeholder="Nhập bình luận..." rows="3" maxLength={100} value={newComment} onChange={e=> setNewComment(e.target.value)} required/>
               <button type="submit" className="btn btn-warning">Gửi bình luận</button>
             </form>
           </div>

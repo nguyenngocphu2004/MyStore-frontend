@@ -130,6 +130,11 @@ export default function AdminBrands() {
             placeholder="Tìm theo tên thương hiệu..."
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => {
+    if (e.key === "Enter") {
+      fetchBrands(1);
+    }
+  }}
           />
           <select
             className="form-select me-2"

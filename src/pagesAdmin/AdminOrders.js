@@ -90,6 +90,11 @@ export default function AdminOrders() {
           placeholder="Tìm theo số điện thoại"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      fetchOrders(1);
+    }
+  }}
         />
         <button className="btn btn-primary" onClick={() => fetchOrders(1)}>
           < BiSearch/>

@@ -1,22 +1,34 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
 
-const screenSizes = ["13 inch", "14 inch", "15.6 inch", "17 inch"];
 const priceOptions = [
   { label: "Tất cả", value: "" },
-  { label: "Dưới 10 triệu", value: "0-10000000" },
   { label: "10 - 20 triệu", value: "10000000-20000000" },
-  { label: "Trên 20 triệu", value: "20000000-999999999" },
+  { label: "20 - 40 triệu", value: "20000000-40000000" },
+  { label: "40 - 70 triệu", value: "40000000-70000000" },
+  { label: "Trên 70 triệu", value: "70000000-999999999" },
 ];
 
 function Laptop() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-
+  const [screenSizes, setScreenSizes] = useState([]);
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("Tất cả");
   const [selectedScreen, setSelectedScreen] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
+  const extractScreenSizes = (products) => {
+  const sizes = new Set();
+
+  products.forEach((p) => {
+    const match = p.screen?.match(/^\d{2}(\.\d+)? inch/);
+    if (match) {
+      sizes.add(match[0]);
+    }
+  });
+
+  return Array.from(sizes).sort();
+  };
 
   // Phân trang
   const [page, setPage] = useState(1);
@@ -36,9 +48,14 @@ function Laptop() {
         // Lọc ra những brand có laptop
         const laptopBrands = [...new Set(laptops.map((p) => p.brand))];
         setBrands(laptopBrands);
+        const sizes = extractScreenSizes(laptops);
+        setScreenSizes(sizes);
       })
       .catch((err) => console.error(err));
   }, []);
+  useEffect(() => {
+  window.scrollTo({ top: 100, behavior: "smooth" });
+}, [page]);
 
   // Lọc sản phẩm khi filter thay đổi
   useEffect(() => {
@@ -51,7 +68,7 @@ function Laptop() {
     }
 
     if (selectedScreen) {
-      filtered = filtered.filter((p) => p.screen === selectedScreen);
+  filtered = filtered.filter((p) => p.screen.includes(selectedScreen));
     }
 
     if (selectedPrice) {

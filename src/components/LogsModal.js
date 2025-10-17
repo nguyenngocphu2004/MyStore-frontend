@@ -26,8 +26,8 @@ function LogsModal({ show, onClose, logs }) {
                 <tr key={idx}>
                   <td>{log.old_quantity ?? "-"}</td>
                   <td>{log.new_quantity ?? "-"}</td>
-                  <td>{log.old_price ? log.old_price.toLocaleString() + " đ" : "-"}</td>
-                  <td>{log.new_price ? log.new_price.toLocaleString() + " đ" : "-"}</td>
+                  <td>{log.old_price ? log.old_price.toLocaleString("vi-VN") + " đ" : "-"}</td>
+                  <td>{log.new_price ? log.new_price.toLocaleString("vi-VN") + " đ" : "-"}</td>
                   <td>{log.username}</td>
                   <td>{new Date(log.created_at).toLocaleString("vi-VN")}</td>
                 </tr>

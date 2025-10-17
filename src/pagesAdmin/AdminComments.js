@@ -121,6 +121,11 @@ export default function AdminComments() {
           placeholder="Tìm theo tên sản phẩm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      fetchComments(1);
+    }
+  }}
         />
         <button className="btn btn-primary" onClick={() => fetchComments(1)}>
           <BiSearch />

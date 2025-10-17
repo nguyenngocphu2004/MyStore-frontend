@@ -7,6 +7,9 @@ export default function AdminProducts() {
   const [brands, setBrands] = useState([]);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [filterCategoryInput, setFilterCategoryInput] = useState("");
+  const [filterBrandInput, setFilterBrandInput] = useState("");
   const [form, setForm] = useState({
     id: null,
     name: "",
@@ -86,9 +89,11 @@ export default function AdminProducts() {
 
   useEffect(() => {
     fetchProducts(page);
-    fetchBrands();
-    fetchCategories();
-  }, [page]);
+  }, [page, search, filterCategory, filterBrand]);
+  useEffect(() => {
+  fetchBrands();
+  fetchCategories();
+  }, []);
 
   // Handle form change
   const handleChange = (e) => {
@@ -409,15 +414,29 @@ export default function AdminProducts() {
                 type="text"
                 className="form-control"
                 placeholder="Tìm sản phẩm..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => {
+  setSearchInput(e.target.value);
+  setPage(1);
+}}
+onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput);
+      setFilterCategory(filterCategoryInput);
+      setFilterBrand(filterBrandInput);
+      fetchProducts(1);
+    }
+  }}
               />
             </div>
             <div className="col-md-3">
               <select
                 className="form-select"
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
+                value={filterCategoryInput}
+                onChange={(e) => {
+  setFilterCategoryInput(e.target.value);
+  setPage(1); // thêm dòng này
+}}
               >
                 <option value="">Tất cả danh mục</option>
                 {categories.map((c) => (
@@ -430,8 +449,8 @@ export default function AdminProducts() {
             <div className="col-md-3">
               <select
                 className="form-select"
-                value={filterBrand}
-                onChange={(e) => setFilterBrand(e.target.value)}
+                value={filterBrandInput}
+                onChange={(e) => setFilterBrandInput(e.target.value)}
               >
                 <option value="">Tất cả thương hiệu</option>
                 {brands.map((b) => (
@@ -445,9 +464,9 @@ export default function AdminProducts() {
               <button
                 className="btn btn-primary w-40"
                 onClick={() => {
-                  setSearch("");
-                  setFilterCategory("");
-                  setFilterBrand("");
+                  setSearch(searchInput);
+                  setFilterCategory(filterCategoryInput);
+                  setFilterBrand(filterBrandInput);
                   fetchProducts(1);
                 }}
               >
@@ -460,7 +479,7 @@ export default function AdminProducts() {
               <tr>
                 <th>ID</th>
                 <th>Tên sản phẩm</th>
-                <th>Giá</th>
+                <th>Giá </th>
                 <th>Thương hiệu</th>
                 <th>Danh mục</th>
                 <th>Hình ảnh</th>

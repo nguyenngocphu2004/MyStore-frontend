@@ -16,7 +16,10 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <nav
         className="bg-dark text-white d-flex flex-column p-3 shadow"
-        style={{ width: "240px" }}
+        style={{ width: "240px", position: "sticky",
+    top: 0,
+    height: "100vh",
+    overflowY: "auto" }}
       >
         <h4 className="text-center mb-4">
           <Link to="/admin/dashboard" className="text-white text-decoration-none">

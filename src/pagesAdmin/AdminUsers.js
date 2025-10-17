@@ -183,6 +183,12 @@ export default function AdminUsers() {
     placeholder="Tìm theo username/email..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
+    onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // tránh form submit nếu có
+      fetchUsers(1);       // gọi hàm tìm kiếm
+    }
+  }}
   />
 
   <select
